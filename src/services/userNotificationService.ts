@@ -2,12 +2,12 @@ import api from './api'
 import type { ApiResponse } from '../types'
 
 export interface UserNotification {
-  id: number
+  notificationId: number
   userId: number
   title: string
   message: string
   isRead: boolean
-  createdDate: string
+  createdAt: string
   applicationId?: number
 }
 

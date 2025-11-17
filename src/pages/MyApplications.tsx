@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { applicationQueryService } from '../services/applicationQueryService'
 import { documentService } from '../services/documentService'
 import { applicationActionService } from '../services/applicationActionService'
 import type { ApplicationListItem, DocumentResponse } from '../types'
 
 const MyApplications: React.FC = () => {
+  const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [filteredApplications, setFilteredApplications] = useState<ApplicationListItem[]>([])
@@ -50,35 +52,7 @@ const MyApplications: React.FC = () => {
     }
   }
 
-  const getStatusText = (status: number) => {
-    const statusMap: { [key: number]: string } = {
-      0: 'Draft',
-      1: 'Pending',
-      2: 'Submitted',
-      3: 'Under Review',
-      4: 'Verified',
-      5: 'Rejected',
-      6: 'Payment Pending',
-      7: 'Pending Approval',
-      8: 'Approved'
-    }
-    return statusMap[status] || 'Unknown'
-  }
 
-  const getStatusColor = (status: number) => {
-    const colorMap: { [key: number]: string } = {
-      0: 'bg-secondary',
-      1: 'bg-primary',
-      2: 'bg-info',
-      3: 'bg-warning',
-      4: 'bg-primary',
-      5: 'bg-danger',
-      6: 'bg-warning',
-      7: 'bg-info',
-      8: 'bg-success'
-    }
-    return colorMap[status] || 'bg-secondary'
-  }
 
   const handleDownloadCertificate = async (documentId: number, fileName: string) => {
     try {
@@ -154,7 +128,7 @@ const MyApplications: React.FC = () => {
 
   return (
     <div className="container mt-4">
-      <h1 className="display-5 fw-bold mb-4">My Applications</h1>
+      <h3 className="fw-bold mb-4">My Applications</h3>
       
       {/* Search and Filter */}
       <div className="card mb-4">
@@ -203,12 +177,7 @@ const MyApplications: React.FC = () => {
             <div key={app.applicationId} className="col-xl-3 col-lg-4 col-md-6 col-sm-12">
               <div className="card h-100">
                 <div className="card-body d-flex flex-column">
-                  <div className="d-flex justify-content-between align-items-start mb-2">
-                    <h6 className="card-title mb-0">{app.licenseTypeName}</h6>
-                    <span className={`badge ${getStatusColor(app.status)}`}>
-                      {getStatusText(app.status)}
-                    </span>
-                  </div>
+                  <h6 className="card-title mb-2">{app.licenseTypeName}</h6>
                   <small className="text-muted mb-1">#{app.applicationNumber}</small>
                   <small className="text-muted mb-3">{new Date(app.appliedDate).toLocaleDateString()}</small>
                   
@@ -221,12 +190,12 @@ const MyApplications: React.FC = () => {
                         View Details
                       </button>
                       {app.status === 0 && (
-                        <a
-                          href={`/draft-application/${app.applicationId}`}
-                          className="btn btn-info btn-sm text-decoration-none"
+                        <button
+                          onClick={() => navigate(`/draft-application/${app.applicationId}`)}
+                          className="btn btn-info btn-sm"
                         >
                           Continue
-                        </a>
+                        </button>
                       )}
                       {app.status === 8 && (
                         <button

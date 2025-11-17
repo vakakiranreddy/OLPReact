@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react'
 import { useDispatch } from 'react-redux'
 import { userService, type UpdateUserDto } from '../services/userService'
 import { updateUser } from '../store/slices/authSlice'
+import { showSuccess, showError } from '../store/slices/notificationSlice'
 import type { UserResponse } from '../types'
+import type { AppDispatch } from '../store'
 
 const ProfilePage: React.FC = () => {
-  const dispatch = useDispatch()
+  const dispatch = useDispatch<AppDispatch>()
   const [user, setUser] = useState<UserResponse | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -47,10 +49,10 @@ const ProfilePage: React.FC = () => {
       setUser(updatedUser)
       dispatch(updateUser(updatedUser))
       setIsEditing(false)
-      alert('Profile updated successfully!')
+      dispatch(showSuccess('Profile updated successfully!'))
     } catch (error) {
       console.error('Error updating profile:', error)
-      alert('Failed to update profile')
+      dispatch(showError('Failed to update profile'))
     }
   }
 
@@ -63,10 +65,10 @@ const ProfilePage: React.FC = () => {
       // Reload profile to get updated image data
       await loadProfile()
       setSelectedFile(null)
-      alert('Profile image updated successfully!')
+      dispatch(showSuccess('Profile image updated successfully!'))
     } catch (error) {
       console.error('Error uploading image:', error)
-      alert('Failed to upload image')
+      dispatch(showError('Failed to upload image'))
     } finally {
       setUploading(false)
     }
@@ -98,8 +100,8 @@ const ProfilePage: React.FC = () => {
       <div className="row justify-content-center">
         <div className="col-md-8">
           <div className="card">
-            <div className="card-header">
-              <h4 className="mb-0">My Profile</h4>
+            <div className="card-header bg-primary text-white">
+              <h4 className="mb-0">Edit Profile</h4>
             </div>
             <div className="card-body">
               <div className="row">
@@ -156,32 +158,12 @@ const ProfilePage: React.FC = () => {
                         <label className="form-label"><strong>Phone:</strong></label>
                         <p>{user.phoneNumber}</p>
                       </div>
-                      <div className="mb-3">
-                        <label className="form-label"><strong>Role:</strong></label>
-                        <p>
-                          <span className={`badge ${
-                            user.role === 0 ? 'bg-primary' :
-                            user.role === 1 ? 'bg-info' :
-                            user.role === 2 ? 'bg-warning' : 'bg-danger'
-                          }`}>
-                            {getRoleName(user.role)}
-                          </span>
-                        </p>
-                      </div>
                       {user.departmentName && (
                         <div className="mb-3">
                           <label className="form-label"><strong>Department:</strong></label>
                           <p>{user.departmentName}</p>
                         </div>
                       )}
-                      <div className="mb-3">
-                        <label className="form-label"><strong>Status:</strong></label>
-                        <p>
-                          <span className={`badge ${user.isActive ? 'bg-success' : 'bg-danger'}`}>
-                            {user.isActive ? 'Active' : 'Inactive'}
-                          </span>
-                        </p>
-                      </div>
                       <div className="mb-3">
                         <label className="form-label"><strong>Member Since:</strong></label>
                         <p>{new Date(user.createdAt).toLocaleDateString()}</p>

@@ -49,10 +49,10 @@ const NotificationsPage: React.FC = () => {
     }
   }
 
-  const handleDeleteNotification = async (id: number) => {
+  const handleDeleteNotification = async (notificationId: number) => {
     try {
-      await userNotificationService.deleteNotification(id)
-      setNotifications(prev => prev.filter(n => n.id !== id))
+      await userNotificationService.deleteNotification(notificationId)
+      setNotifications(prev => prev.filter(n => n.notificationId !== notificationId))
     } catch (error) {
       console.error('Error deleting notification:', error)
     }
@@ -124,32 +124,30 @@ const NotificationsPage: React.FC = () => {
               ) : (
                 <div className="space-y-3">
                   {notifications.map(notification => (
-                    <Card key={notification.id} className={`mb-3 ${!notification.isRead ? 'border-primary' : ''}`}>
-                      <Card.Body>
-                        <div className="d-flex justify-content-between align-items-start">
+                    <Card key={notification.notificationId} className="mb-3 shadow-sm border-0">
+                      <Card.Body className="p-0">
+                        <div className="p-3 d-flex justify-content-between align-items-center" style={{backgroundColor: '#e3f2fd'}}>
                           <div className="flex-grow-1">
-                            <div className="d-flex align-items-center mb-2">
-                              <h6 className="mb-0 me-2">{notification.title}</h6>
-                              {!notification.isRead && (
-                                <Badge bg="primary" className="me-2">New</Badge>
-                              )}
-                              {notification.applicationId && (
-                                <Badge bg="secondary">App #{notification.applicationId}</Badge>
-                              )}
-                            </div>
-                            <p className="text-muted mb-2">{notification.message}</p>
-                            <small className="text-muted">
-                              <i className="bi bi-clock me-1"></i>
-                              {formatDate(notification.createdDate)}
-                            </small>
+                            <h6 className="mb-1 fw-normal" style={{color: '#1565c0'}}>{notification.title}</h6>
+                            {notification.applicationId && (
+                              <Badge bg="secondary" className="small">App #{notification.applicationId}</Badge>
+                            )}
                           </div>
                           <Button
                             variant="outline-danger"
                             size="sm"
-                            onClick={() => handleDeleteNotification(notification.id)}
+                            onClick={() => handleDeleteNotification(notification.notificationId)}
+                            style={{backgroundColor: 'rgba(255,255,255,0.8)', border: '1px solid #dc3545'}}
                           >
                             <i className="bi bi-trash"></i>
                           </Button>
+                        </div>
+                        <div className="p-3">
+                          <p className="mb-1 small text-dark">{notification.message}</p>
+                          <p className="mb-0 text-muted" style={{fontSize: '0.75rem'}}>
+                            <i className="bi bi-clock me-1"></i>
+                            {formatDate(notification.createdAt)}
+                          </p>
                         </div>
                       </Card.Body>
                     </Card>
@@ -167,23 +165,22 @@ const NotificationsPage: React.FC = () => {
               ) : (
                 <div className="space-y-3">
                   {broadcasts.map(broadcast => (
-                    <Card key={broadcast.id} className="mb-3">
-                      <Card.Body>
+                    <Card key={broadcast.broadcastId} className="mb-3 shadow-sm border-0">
+                      <Card.Body className="p-3">
                         <div className="d-flex justify-content-between align-items-start">
                           <div className="flex-grow-1">
-                            <div className="d-flex align-items-center mb-2">
-                              <h6 className="mb-0 me-2">{broadcast.title}</h6>
-                              <Badge bg={broadcast.isActive ? 'success' : 'secondary'}>
-                                {broadcast.isActive ? 'Active' : 'Inactive'}
-                              </Badge>
+                            <div className="mb-2 p-2 rounded" style={{backgroundColor: '#e3f2fd'}}>
+                              <h6 className="mb-0 fw-normal" style={{color: '#1565c0'}}>{broadcast.title}</h6>
                             </div>
-                            <p className="text-muted mb-2">{broadcast.message}</p>
-                            <small className="text-muted">
-                              <i className="bi bi-person me-1"></i>
-                              By {broadcast.createdBy} • 
-                              <i className="bi bi-clock ms-2 me-1"></i>
-                              {formatDate(broadcast.createdDate)}
-                            </small>
+                            <div className="mb-3">
+                              <p className="mb-1 small text-dark">{broadcast.message}</p>
+                              <p className="mb-0 text-muted" style={{fontSize: '0.75rem'}}>
+                                <i className="bi bi-person me-1"></i>
+                                By {broadcast.createdBy} • 
+                                <i className="bi bi-clock ms-2 me-1"></i>
+                                {formatDate(broadcast.createdAt)}
+                              </p>
+                            </div>
                           </div>
                         </div>
                       </Card.Body>

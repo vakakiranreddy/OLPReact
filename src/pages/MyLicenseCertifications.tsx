@@ -83,7 +83,7 @@ const MyLicenseCertifications: React.FC = () => {
 
   return (
     <div className="container mt-4">
-      <h1 className="display-5 fw-bold mb-4">My License Certifications</h1>
+      <h3 className="fw-bold mb-4">My License Certifications</h3>
       
       {approvedApplications.length === 0 ? (
         <div className="text-center py-5">
@@ -99,20 +99,9 @@ const MyLicenseCertifications: React.FC = () => {
             <div key={app.applicationId} className="col-xl-3 col-lg-4 col-md-6 col-sm-12">
               <div className="card h-100">
                 <div className="card-body d-flex flex-column">
-                  <div className="d-flex align-items-center justify-content-between mb-2">
-                    <div className="d-flex align-items-center">
-                      <div className="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-2" style={{width: '32px', height: '32px'}}>
-                        <i className="fas fa-check-circle text-success" style={{fontSize: '14px'}}></i>
-                      </div>
-                      <span className="badge bg-success small">
-                        Active
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <h6 className="card-title">{app.licenseTypeName}</h6>
+                  <h6 className="card-title mb-2">{app.licenseTypeName}</h6>
                   <small className="text-muted mb-1">#{app.applicationNumber}</small>
-                  <small className="text-muted mb-3">{new Date(app.appliedDate).toLocaleDateString()}</small>
+                  <small className="text-muted mb-2">{new Date(app.appliedDate).toLocaleDateString()}</small>
 
                   {certificates[app.applicationId] && certificates[app.applicationId].length > 0 && (
                     <div className="border-top pt-2 mb-2">
@@ -142,7 +131,7 @@ const MyLicenseCertifications: React.FC = () => {
                       onClick={() => handleDownloadOfficialCertificate(app.applicationId)}
                       className="btn btn-success btn-sm w-100"
                     >
-                      Download Certificate
+                      Download
                     </button>
                   </div>
                 </div>

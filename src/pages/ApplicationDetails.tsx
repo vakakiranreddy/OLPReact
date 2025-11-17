@@ -8,6 +8,7 @@ const ApplicationDetails: React.FC = () => {
   const [application, setApplication] = useState<ApplicationDetailsType | null>(null)
   const [loading, setLoading] = useState(true)
 
+
   useEffect(() => {
     if (applicationId) {
       fetchApplication()

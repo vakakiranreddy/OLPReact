@@ -4,6 +4,7 @@ export interface User {
   lastName: string
   email: string
   role: number
+  departmentId?: number
   departmentName?: string
   profileImage?: string
   profileImageUrl?: string
@@ -21,6 +22,7 @@ export interface UserResponse {
   isEmailVerified: boolean
   isActive: boolean
   createdAt: string
+  departmentId?: number
   departmentName?: string
   profileImage?: string
   profileImageUrl?: string

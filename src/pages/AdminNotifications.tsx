@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react'
+import { useDispatch } from 'react-redux'
 import { broadcastNotificationService, type CreateBroadcastDto } from '../services/broadcastNotificationService'
 import { userNotificationService, type CreateUserNotificationDto } from '../services/userNotificationService'
 import { userService } from '../services/userService'
+import { showSuccess, showError } from '../store/slices/notificationSlice'
 import type { UserResponse } from '../types'
+import type { AppDispatch } from '../store'
 
 const AdminNotifications: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>()
   const [activeTab, setActiveTab] = useState<'broadcast' | 'individual'>('broadcast')
   const [users, setUsers] = useState<UserResponse[]>([])
   const [loading, setLoading] = useState(false)
@@ -83,10 +87,10 @@ const AdminNotifications: React.FC = () => {
         targetRole: undefined,
         targetDepartmentId: undefined
       })
-      alert('Broadcast notification sent successfully!')
+      dispatch(showSuccess('Broadcast notification sent successfully!'))
     } catch (error) {
       console.error('Error sending broadcast:', error)
-      alert('Failed to send broadcast notification')
+      dispatch(showError('Failed to send broadcast notification'))
     } finally {
       setLoading(false)
     }
@@ -104,10 +108,10 @@ const AdminNotifications: React.FC = () => {
         userId: 0,
         sendEmail: false
       })
-      alert('Individual notification sent successfully!')
+      dispatch(showSuccess('Individual notification sent successfully!'))
     } catch (error) {
       console.error('Error sending individual notification:', error)
-      alert('Failed to send individual notification')
+      dispatch(showError('Failed to send individual notification'))
     } finally {
       setLoading(false)
     }

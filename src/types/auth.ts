@@ -20,6 +20,7 @@ export interface LoginResponse {
   lastName: string
   email: string
   role: number
+  departmentId?: number
   departmentName?: string
 }
 

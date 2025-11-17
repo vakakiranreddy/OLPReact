@@ -9,7 +9,7 @@ console.log('API Base URL:', API_BASE_URL)
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
-  // No timeout - let requests complete naturally
+  timeout: 30000, // 30 second timeout
   headers: {
     'Content-Type': 'application/json',
   },
@@ -28,8 +28,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid
+    // Only handle 401 for authenticated requests (requests with Authorization header)
+    // Don't handle 401 for login attempts (which don't have Authorization header)
+    if (error.response?.status === 401 && error.config?.headers?.Authorization) {
+      // Token expired or invalid during authenticated request
       store.dispatch(logout())
       window.location.href = '/login'
     }

@@ -1,13 +1,18 @@
 import { configureStore } from '@reduxjs/toolkit'
 import authSlice from './slices/authSlice'
+import applicationSlice from './slices/applicationSlice'
+import documentSlice from './slices/documentSlice'
+import notificationSlice from './slices/notificationSlice'
+import uiSlice from './slices/uiSlice'
 
 // Configure the Redux store
 export const store = configureStore({
   reducer: {
     auth: authSlice,
-    // We'll add more slices here later
-    // applications: applicationSlice,
-    // notifications: notificationSlice,
+    applications: applicationSlice,
+    documents: documentSlice,
+    notifications: notificationSlice,
+    ui: uiSlice,
   },
 })
 

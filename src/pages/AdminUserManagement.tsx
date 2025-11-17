@@ -129,7 +129,7 @@ const UserManagement: React.FC = () => {
           <div className="card mb-4">
             <div className="card-body">
               <div className="row g-3">
-                <div className="col-md-4">
+                <div className="col-lg-4 col-md-12">
                   <input
                     type="text"
                     className="form-control"
@@ -138,7 +138,7 @@ const UserManagement: React.FC = () => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
-                <div className="col-md-3">
+                <div className="col-lg-2 col-md-4">
                   <select
                     className="form-select"
                     value={selectedRole !== undefined ? selectedRole.toString() : ''}
@@ -150,7 +150,7 @@ const UserManagement: React.FC = () => {
                     ))}
                   </select>
                 </div>
-                <div className="col-md-3">
+                <div className="col-lg-3 col-md-4">
                   <select
                     className="form-select"
                     value={selectedDepartment !== undefined ? selectedDepartment.toString() : ''}
@@ -162,14 +162,17 @@ const UserManagement: React.FC = () => {
                     ))}
                   </select>
                 </div>
-                <div className="col-md-1">
+                <div className="col-lg-2 col-md-2 col-6">
                   <button className="btn btn-outline-primary w-100" onClick={handleSearch}>
-                    <i className="fas fa-search me-2"></i>Search
+                    <i className="fas fa-search d-lg-inline d-none me-2"></i>
+                    <span className="d-lg-inline d-none">Search</span>
+                    <i className="fas fa-search d-lg-none"></i>
                   </button>
                 </div>
-                <div className="col-md-1">
+                <div className="col-lg-1 col-md-2 col-6">
                   <button className="btn btn-outline-secondary w-100" onClick={handleReset}>
-                    Reset
+                    <span className="d-lg-inline d-none">Reset</span>
+                    <i className="fas fa-undo d-lg-none"></i>
                   </button>
                 </div>
               </div>

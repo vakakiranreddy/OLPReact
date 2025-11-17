@@ -49,9 +49,13 @@ export const authService = {
   // Send OTP for email verification
   sendOtp: async (email: string): Promise<void> => {
     try {
-      await api.post<ApiResponse<void>>('/auth/send-verification-otp', { email })
+      const response = await api.post<ApiResponse<void> & { success?: boolean }>('/auth/send-verification-otp', { email })
+      // Check if response indicates failure
+      if (response.data.success === false) {
+        throw new Error(response.data.message || 'Email already exists')
+      }
     } catch (error: unknown) {
-      throw new Error(getErrorMessage(error, 'Failed to send OTP. Please try again.'))
+      throw new Error(getErrorMessage(error, 'Email already exists'))
     }
   },
 

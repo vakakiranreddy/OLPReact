@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { licenseTypeService } from '../services/licenseTypeService'
 import { requiredDocumentService } from '../services/requiredDocumentService'
-import type { LicenseType, RequiredDocument, CreateRequiredDocument, UpdateRequiredDocument } from '../types'
+import type { LicenseType, RequiredDocument, CreateRequiredDocument, UpdateRequiredDocument, ApiError } from '../types'
 
 const RequiredDocuments: React.FC = () => {
   const [licenseTypes, setLicenseTypes] = useState<LicenseType[]>([])
@@ -14,10 +14,11 @@ const RequiredDocuments: React.FC = () => {
   const [showEditDoc, setShowEditDoc] = useState(false)
   const [editingDoc, setEditingDoc] = useState<RequiredDocument | null>(null)
   const [newDoc, setNewDoc] = useState<CreateRequiredDocument>({
-    documentName: '',
-    description: '',
-    isMandatory: true,
-    licenseTypeId: 0
+    DocumentName: '',
+    Description: '',
+    FieldName: '',
+    IsMandatory: true,
+    LicenseTypeId: 0
   })
 
   useEffect(() => {
@@ -64,22 +65,42 @@ const RequiredDocuments: React.FC = () => {
     }
   }
 
+  const [creating, setCreating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
   const handleCreateDoc = async (e: React.FormEvent) => {
     e.preventDefault()
+    setCreating(true)
+    setError(null)
+    
+    // Validate licenseTypeId
+    if (!newDoc.LicenseTypeId || newDoc.LicenseTypeId === 0) {
+      setError('Please select a license type first')
+      setCreating(false)
+      return
+    }
+    
     try {
+      console.log('Creating document with data:', newDoc)
       await requiredDocumentService.create(newDoc)
       setShowCreateDoc(false)
       setNewDoc({
-        documentName: '',
-        description: '',
-        isMandatory: true,
-        licenseTypeId: 0
+        DocumentName: '',
+        Description: '',
+        FieldName: '',
+        IsMandatory: true,
+        LicenseTypeId: selectedLicenseTypeForDocs || 0
       })
       if (selectedLicenseTypeForDocs) {
         handleLicenseTypeClick(selectedLicenseTypeForDocs)
       }
     } catch (error) {
       console.error('Error creating document:', error)
+      const errorMessage = error instanceof Error ? error.message : 
+        (error as ApiError)?.response?.data?.message || 'Failed to create document'
+      setError(errorMessage)
+    } finally {
+      setCreating(false)
     }
   }
 
@@ -133,7 +154,7 @@ const RequiredDocuments: React.FC = () => {
               <button 
                 className="btn btn-primary"
                 onClick={() => {
-                  setNewDoc({...newDoc, licenseTypeId: selectedLicenseTypeForDocs})
+                  setNewDoc({...newDoc, LicenseTypeId: selectedLicenseTypeForDocs})
                   setShowCreateDoc(true)
                 }}
               >
@@ -215,11 +236,8 @@ const RequiredDocuments: React.FC = () => {
                           <div key={doc.requiredDocumentId} className="col-md-6 col-lg-4 mb-3">
                             <div className="card h-100">
                               <div className="card-body">
-                                <div className="d-flex justify-content-between align-items-start mb-2">
+                                <div className="mb-2">
                                   <h6 className="card-title mb-0">{doc.documentName}</h6>
-                                  <span className={`badge ${doc.isMandatory ? 'bg-danger' : 'bg-secondary'}`}>
-                                    {doc.isMandatory ? 'Required' : 'Optional'}
-                                  </span>
                                 </div>
                                 <p className="card-text small text-muted">{doc.description}</p>
                               </div>
@@ -275,24 +293,41 @@ const RequiredDocuments: React.FC = () => {
               </div>
               <form onSubmit={handleCreateDoc}>
                 <div className="modal-body">
+                  {error && (
+                    <div className="alert alert-danger" role="alert">
+                      {error}
+                    </div>
+                  )}
+                  <div className="mb-3">
+                    <label className="form-label">License Type</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={licenseTypes.find(lt => lt.licenseTypeId === newDoc.LicenseTypeId)?.licenseName || 'No license type selected'}
+                      disabled
+                    />
+                  </div>
                   <div className="mb-3">
                     <label className="form-label">Document Name</label>
                     <input
                       type="text"
                       className="form-control"
-                      value={newDoc.documentName}
-                      onChange={(e) => setNewDoc({...newDoc, documentName: e.target.value})}
+                      value={newDoc.DocumentName}
+                      onChange={(e) => {
+                        const docName = e.target.value
+                        setNewDoc({...newDoc, DocumentName: docName, FieldName: docName})
+                      }}
                       required
                     />
                   </div>
+
                   <div className="mb-3">
                     <label className="form-label">Description</label>
                     <textarea
                       className="form-control"
                       rows={3}
-                      value={newDoc.description}
-                      onChange={(e) => setNewDoc({...newDoc, description: e.target.value})}
-                      required
+                      value={newDoc.Description || ''}
+                      onChange={(e) => setNewDoc({...newDoc, Description: e.target.value})}
                     />
                   </div>
                   <div className="mb-3">
@@ -300,8 +335,8 @@ const RequiredDocuments: React.FC = () => {
                       <input
                         className="form-check-input"
                         type="checkbox"
-                        checked={newDoc.isMandatory}
-                        onChange={(e) => setNewDoc({...newDoc, isMandatory: e.target.checked})}
+                        checked={newDoc.IsMandatory}
+                        onChange={(e) => setNewDoc({...newDoc, IsMandatory: e.target.checked})}
                       />
                       <label className="form-check-label">
                         Mandatory Document
@@ -317,8 +352,15 @@ const RequiredDocuments: React.FC = () => {
                   >
                     Cancel
                   </button>
-                  <button type="submit" className="btn btn-primary">
-                    Add Document
+                  <button type="submit" className="btn btn-primary" disabled={creating}>
+                    {creating ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Creating...
+                      </>
+                    ) : (
+                      'Add Document'
+                    )}
                   </button>
                 </div>
               </form>
@@ -357,9 +399,8 @@ const RequiredDocuments: React.FC = () => {
                     <textarea
                       className="form-control"
                       rows={3}
-                      value={editingDoc.description}
+                      value={editingDoc.description || ''}
                       onChange={(e) => setEditingDoc({...editingDoc, description: e.target.value})}
-                      required
                     />
                   </div>
                   <div className="mb-3">

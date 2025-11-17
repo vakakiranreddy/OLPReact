@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Container, Card, Form, Button, Alert } from 'react-bootstrap'
+import { Form, Button, Alert } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
 import { authService } from '../services/authService'
 
@@ -96,8 +96,11 @@ function Register() {
     try {
       await authService.sendOtp(email)
       setOtpSent(true)
+      setError('') // Clear any previous errors on success
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to send OTP')
+      setOtpSent(false) // Ensure OTP field doesn't show on error
+      setOtpVerified(false) // Reset verification status
     } finally {
       setSendingOtp(false)
     }
@@ -173,44 +176,49 @@ function Register() {
     }
   }
 
-  if (success) {
-    return (
-      <div className="login-container">
-        <Container>
-          <div className="row justify-content-center">
-            <div className="col-md-6 col-lg-4">
-              <Card>
-                <Card.Header className="text-center">
-                  <h3>Registration Successful</h3>
-                </Card.Header>
-                <Card.Body className="text-center">
-                  <Alert variant="success">
-                    Your account has been created successfully! Please verify your email to login.
-                  </Alert>
-                  <Link to="/login">
-                    <Button variant="primary">
-                      Go to Login
-                    </Button>
-                  </Link>
-                </Card.Body>
-              </Card>
-            </div>
-          </div>
-        </Container>
-      </div>
-    )
-  }
-
   return (
-    <div className="login-container">
-      <Container>
-        <div className="row justify-content-center">
-          <div className="col-md-8 col-lg-6">
-            <Card>
-              <Card.Header className="text-center">
-                <h3>Create Your Account</h3>
-              </Card.Header>
-              <Card.Body>
+    <div 
+      className="container-fluid min-vh-100" 
+      style={{
+        backgroundImage: 'url(/images/Background.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
+      <div className="row min-vh-100">
+        {/* Government Image Section */}
+        <div className="col-12 col-md-6 d-flex align-items-center justify-content-center">
+          <div className="text-center px-3 py-4">
+            <img 
+              src="/images/govtimg.png" 
+              alt="Government Logo" 
+              className="img-fluid mb-4"
+              style={{maxHeight: '420px', objectFit: 'contain'}}
+              onError={(e) => {
+                // Fallback to a placeholder if image doesn't exist
+                e.currentTarget.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Hb3Zlcm5tZW50IExvZ288L3RleHQ+PC9zdmc+'
+              }}
+            />
+            <h4 className="text-white mb-3">Online License & Permit System</h4>
+            <p className="text-white-50">Secure and efficient government services at your fingertips</p>
+          </div>
+        </div>
+        
+        {/* Register Form Section */}
+        <div className="col-12 col-md-6 d-flex align-items-center justify-content-center" style={{backgroundColor: 'white'}}>
+        <div className="w-100 px-2 py-2" style={{maxWidth: '550px'}}>
+          <div className="text-center mb-4">
+            <h3 className="text-primary mb-2">Create Your Account</h3>
+            <p className="text-muted">Fill in your details to register</p>
+          </div>
+          
+          {success && (
+            <Alert variant="success" className="mb-3">
+              <i className="fas fa-check-circle me-2"></i>
+              Registration successful! You can now <Link to="/login" className="text-decoration-none">login here</Link>.
+            </Alert>
+          )}
                 {error && (
                   <Alert variant="danger">
                     {error}
@@ -432,7 +440,22 @@ function Register() {
                     <Button 
                       variant="success" 
                       type="submit" 
-                      disabled={loading || !otpVerified}
+                      disabled={
+                        loading || 
+                        !otpVerified || 
+                        !firstName.trim() || 
+                        !lastName.trim() || 
+                        !email.trim() || 
+                        !phoneNumber.trim() || 
+                        !password || 
+                        !confirmPassword || 
+                        !!firstNameError || 
+                        !!lastNameError || 
+                        !!emailError || 
+                        !!phoneError || 
+                        !!passwordError || 
+                        !!confirmPasswordError
+                      }
                     >
                       {loading ? 'Creating Account...' : 'Create Account'}
                     </Button>
@@ -447,14 +470,12 @@ function Register() {
                   )}
                   
                   <div className="text-center mt-3">
-                    <p>Already have an account? <Link to="/login">Login here</Link></p>
+                    <p>Already have an account? <Link to="/login" className="text-decoration-none">Login here</Link></p>
                   </div>
                 </Form>
-              </Card.Body>
-            </Card>
-          </div>
         </div>
-      </Container>
+        </div>
+      </div>
     </div>
   )
 }

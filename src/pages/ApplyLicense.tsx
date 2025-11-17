@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Container, Row, Col, Card, Form, Button, Alert, Breadcrumb, Badge } from 'react-bootstrap'
+import { Container, Row, Col, Card, Form, Button, Alert, Badge } from 'react-bootstrap'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { requiredDocumentService } from '../services/requiredDocumentService'
 import { applicationActionService } from '../services/applicationActionService'
@@ -134,16 +134,7 @@ function ApplyLicense() {
 
   return (
     <Container className="mt-4">
-      {/* Breadcrumb */}
-      <Breadcrumb className="mb-4">
-        <Breadcrumb.Item onClick={() => navigate('/departments')} style={{ cursor: 'pointer' }}>
-          Departments
-        </Breadcrumb.Item>
-        <Breadcrumb.Item onClick={() => navigate(`/departments/${licenseType.departmentId}/licenses`)} style={{ cursor: 'pointer' }}>
-          {licenseType.departmentName}
-        </Breadcrumb.Item>
-        <Breadcrumb.Item active>Apply for {licenseType.licenseName}</Breadcrumb.Item>
-      </Breadcrumb>
+
 
       <Row>
         <Col lg={8}>
@@ -310,6 +301,48 @@ function ApplyLicense() {
           </Card>
         </Col>
       </Row>
+      
+      {/* Department-specific Images with Animation */}
+      <Row className="mt-3 mb-4 align-items-center">
+        <Col xs={8} className="text-center">
+          <img 
+            src={licenseType.departmentName?.toLowerCase().includes('transport') ? '/images/veh.png' :
+                 licenseType.departmentName?.toLowerCase().includes('health') ? '/images/doct.png' :
+                 licenseType.departmentName?.toLowerCase().includes('education') ? '/images/medcet.png' :
+                 '/images/veh.png'}
+            alt={`${licenseType.departmentName} Services`}
+            className="img-fluid"
+            style={{ maxHeight: '300px', animation: 'slideRight 2s ease-in-out' }}
+            onError={(e) => {
+              e.currentTarget.src = 'https://via.placeholder.com/400x300/007bff/ffffff?text=' + encodeURIComponent(licenseType.departmentName + ' Services')
+            }}
+          />
+        </Col>
+        <Col xs={4} className="text-center">
+          <img 
+            src={licenseType.departmentName?.toLowerCase().includes('transport') ? '/images/Lisence.png' :
+                 licenseType.departmentName?.toLowerCase().includes('health') ? '/images/medcet.png' :
+                 '/images/Lisence.png'}
+            alt={`${licenseType.departmentName} License`}
+            className="img-fluid"
+            style={{ maxHeight: '150px', animation: 'slideLeft 2s ease-in-out' }}
+            onError={(e) => {
+              e.currentTarget.src = 'https://via.placeholder.com/200x150/28a745/ffffff?text=' + encodeURIComponent(licenseType.departmentName + ' License')
+            }}
+          />
+        </Col>
+      </Row>
+      
+      <style>{`
+        @keyframes slideRight {
+          0% { transform: translateX(-100%); opacity: 0; }
+          100% { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideLeft {
+          0% { transform: translateX(100%); opacity: 0; }
+          100% { transform: translateX(0); opacity: 1; }
+        }
+      `}</style>
     </Container>
   )
 }

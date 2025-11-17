@@ -1,20 +1,25 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Container, Row, Col, Card, Button, Alert, Badge, Form } from 'react-bootstrap'
+import { useDispatch } from 'react-redux'
+import { Container, Row, Col, Card, Button, Alert, Form } from 'react-bootstrap'
 import { applicationQueryService } from '../services/applicationQueryService'
 import { documentService } from '../services/documentService'
 import { requiredDocumentService } from '../services/requiredDocumentService'
+import { showSuccess, showError } from '../store/slices/notificationSlice'
 import type { ApplicationDetails, RequiredDocument, DocumentResponse } from '../types'
+import type { AppDispatch } from '../store'
 
 const DocumentUpload: React.FC = () => {
   const { applicationId } = useParams<{ applicationId: string }>()
   const navigate = useNavigate()
+  const dispatch = useDispatch<AppDispatch>()
   const [application, setApplication] = useState<ApplicationDetails | null>(null)
   const [requiredDocs, setRequiredDocs] = useState<RequiredDocument[]>([])
   const [uploadedDocs, setUploadedDocs] = useState<{[key: number]: DocumentResponse}>({})
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [previewDoc, setPreviewDoc] = useState<DocumentResponse | null>(null)
+
 
   useEffect(() => {
     if (applicationId) {
@@ -30,10 +35,13 @@ const DocumentUpload: React.FC = () => {
       const docs = await requiredDocumentService.getByLicenseType(appData.licenseTypeId)
       setRequiredDocs(docs)
       
-      const uploadedDocuments = await documentService.getApplicationDocuments(Number(applicationId))
+      const uploadedDocuments = await documentService.getApplicationDocumentsWithRequiredId(Number(applicationId))
       const uploadedMap: {[key: number]: DocumentResponse} = {}
       uploadedDocuments.forEach(doc => {
-        uploadedMap[doc.requiredDocumentId] = doc
+        if (!uploadedMap[doc.requiredDocumentId] || 
+            new Date(doc.uploadedDate) > new Date(uploadedMap[doc.requiredDocumentId].uploadedDate)) {
+          uploadedMap[doc.requiredDocumentId] = doc
+        }
       })
       setUploadedDocs(uploadedMap)
     } catch (error) {
@@ -56,10 +64,10 @@ const DocumentUpload: React.FC = () => {
       const fileInput = document.getElementById(`file-${docId}`) as HTMLInputElement
       if (fileInput) fileInput.value = ''
       
-      alert('Document uploaded successfully!')
+      dispatch(showSuccess('Document uploaded successfully!'))
     } catch (error) {
       console.error('Error uploading file:', error)
-      alert('Error uploading file. Please try again.')
+      dispatch(showError('Error uploading file. Please try again.'))
     } finally {
       setUploading(false)
     }
@@ -87,7 +95,7 @@ const DocumentUpload: React.FC = () => {
       reader.readAsDataURL(blob)
     } catch (error) {
       console.error('Error loading document for preview:', error)
-      alert('Error loading document preview')
+      dispatch(showError('Error loading document preview'))
     }
   }
 
@@ -108,35 +116,33 @@ const DocumentUpload: React.FC = () => {
   }
 
   return (
-    <Container className="mt-4">
+    <Container className="mt-3">
       <Row>
-        <Col lg={8} className="mx-auto">
+        <Col lg={6}>
           <Card>
-            <Card.Header className="bg-primary text-white">
-              <h4 className="mb-1">Upload Documents</h4>
+            <Card.Header className="bg-primary text-white p-2">
               <div>
                 <strong>{application.applicationNumber}</strong>
                 <br />
                 <small>{application.licenseTypeName}</small>
+                <br />
+                <small>PDF, JPG, PNG, DOC, DOCX (Max 10MB)</small>
               </div>
             </Card.Header>
             
-            <Card.Body>
-              <h5 className="mb-3">Required Documents</h5>
+            <Card.Body className="p-3">
+              <h6 className="mb-2">Required Documents</h6>
               
               {requiredDocs.map((doc) => (
-                <Card key={doc.requiredDocumentId} className="mb-3">
-                  <Card.Body>
-                    <div className="d-flex justify-content-between align-items-start mb-2">
+                <Card key={doc.requiredDocumentId} className="mb-2">
+                  <Card.Body className="p-2">
+                    <div className="d-flex justify-content-between align-items-start mb-1">
                       <div>
-                        <h6 className="mb-1">{doc.documentName}</h6>
+                        <h6 className="mb-0">{doc.documentName}</h6>
                         {doc.description && (
                           <small className="text-muted">{doc.description}</small>
                         )}
                       </div>
-                      {doc.isMandatory && (
-                        <Badge bg="danger">Required</Badge>
-                      )}
                     </div>
                     
                     <Form.Group>
@@ -150,20 +156,16 @@ const DocumentUpload: React.FC = () => {
                             handleFileUpload(doc.requiredDocumentId, file)
                           }
                         }}
+
                         disabled={uploading}
                         size="sm"
                       />
-                      <Form.Text className="text-muted">
-                        Accepted formats: PDF, JPG, PNG, DOC, DOCX (Max 10MB)
-                      </Form.Text>
+
                       {uploadedDocs[doc.requiredDocumentId] ? (
-                        <Alert variant="success" className="mt-2 mb-0">
+                        <Alert variant="success" className="mt-1 mb-0 py-2">
                           <small>
-                            ✓ Uploaded: {uploadedDocs[doc.requiredDocumentId].fileName}
-                            <br />
-                            Size: {uploadedDocs[doc.requiredDocumentId].fileSizeFormatted}
-                            <br />
-                            <div className="d-flex gap-2 mt-2">
+                            ✓ {uploadedDocs[doc.requiredDocumentId].fileName} ({uploadedDocs[doc.requiredDocumentId].fileSizeFormatted})
+                            <div className="d-flex gap-2 mt-1">
                               <Button 
                                 variant="outline-info" 
                                 size="sm"
@@ -226,7 +228,7 @@ const DocumentUpload: React.FC = () => {
                           )}
                         </Alert>
                       ) : (
-                        <div className="mt-2">
+                        <div className="mt-1">
                           <small className="text-muted">No file uploaded</small>
                         </div>
                       )}
@@ -235,7 +237,7 @@ const DocumentUpload: React.FC = () => {
                 </Card>
               ))}
               
-              <div className="text-center mt-4">
+              <div className="text-center mt-3">
                 <Button 
                   variant="primary" 
                   onClick={handleNext}
@@ -244,10 +246,60 @@ const DocumentUpload: React.FC = () => {
                   {!isFormValid() ? 'Upload Required Documents' : 'Next - Proceed to Payment'}
                 </Button>
                 {!isFormValid() && (
-                  <div className="text-danger mt-2">
+                  <div className="text-danger mt-1">
                     <small>Please upload all required documents to continue</small>
                   </div>
                 )}
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+        
+        <Col lg={6}>
+          <Card className="h-100">
+            <Card.Header className="bg-success text-white p-3">
+              <h5 className="mb-0">📋 Application Process</h5>
+            </Card.Header>
+            <Card.Body className="p-4">
+              <div className="d-flex flex-column gap-3">
+
+                <div className="d-flex align-items-center">
+                  <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style={{width: '30px', height: '30px', fontSize: '14px'}}>1</div>
+                  <span>Upload all required documents</span>
+                </div>
+                <div className="d-flex align-items-center">
+                  <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style={{width: '30px', height: '30px', fontSize: '14px'}}>2</div>
+                  <span>Pay the processing fee</span>
+                </div>
+                <div className="d-flex align-items-center">
+                  <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style={{width: '30px', height: '30px', fontSize: '14px'}}>3</div>
+                  <span>A reviewer will be assigned</span>
+                </div>
+                <div className="d-flex align-items-center">
+                  <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style={{width: '30px', height: '30px', fontSize: '14px'}}>4</div>
+                  <span>You will be notified with every status change</span>
+                </div>
+                <div className="d-flex align-items-center">
+                  <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style={{width: '30px', height: '30px', fontSize: '14px'}}>5</div>
+                  <span>You can track your application status</span>
+                </div>
+                <div className="d-flex align-items-center">
+                  <div className="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3" style={{width: '30px', height: '30px', fontSize: '14px'}}>✓</div>
+                  <span>Once approved, you will get your license certificate</span>
+                </div>
+                <div className="d-flex align-items-center">
+                  <div className="bg-info text-white rounded-circle d-flex align-items-center justify-content-center me-3" style={{width: '30px', height: '30px', fontSize: '12px'}}>📧</div>
+                  <span>You can find it in your page and also get it through mail</span>
+                </div>
+              </div>
+              
+              <div className="text-center">
+                <img 
+                  src="/images/DigitalLisence.png" 
+                  alt="License" 
+                  className="img-fluid"
+                  style={{ maxHeight: '350px', objectFit: 'contain' }}
+                />
               </div>
             </Card.Body>
           </Card>

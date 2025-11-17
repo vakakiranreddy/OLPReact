@@ -66,10 +66,12 @@ export const licenseTypeService = {
   // Update license type
   update: async (data: UpdateLicenseType): Promise<LicenseType> => {
     try {
+      console.log('Sending update data:', data)
       const response = await api.put<ApiResponse<LicenseType>>('/licensetype', data)
       return response.data.data
     } catch (error) {
       console.error('Error updating license type:', error)
+      console.error('Error details:', error.response?.data)
       throw new Error('Failed to update license type')
     }
   },

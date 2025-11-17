@@ -2,11 +2,11 @@ import api from './api'
 import type { ApiResponse } from '../types'
 
 export interface BroadcastNotification {
-  id: number
+  broadcastId: number
   title: string
   message: string
   createdBy: string
-  createdDate: string
+  createdAt: string
   isActive: boolean
 }
 

@@ -55,10 +55,11 @@ export interface RequiredDocument {
 }
 
 export interface CreateRequiredDocument {
-  documentName: string
-  description?: string
-  isMandatory: boolean
-  licenseTypeId: number
+  DocumentName: string
+  Description?: string
+  FieldName: string
+  IsMandatory: boolean
+  LicenseTypeId: number
 }
 
 export interface UpdateRequiredDocument {

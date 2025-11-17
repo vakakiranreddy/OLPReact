@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Container, Row, Col, Card, Button, Alert, Breadcrumb, Modal, Form, Badge, InputGroup } from 'react-bootstrap'
+import { Container, Row, Col, Card, Button, Alert, Modal, Form, Badge, InputGroup } from 'react-bootstrap'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { licenseTypeService } from '../services/licenseTypeService'
@@ -80,13 +80,17 @@ function DepartmentLicenses() {
   }
 
   const handleSave = async () => {
-    if (!editingLicense) return
+    if (!editingLicense || !department) return
     
     try {
       setUploading(true)
       const updateData: UpdateLicenseType = {
         LicenseTypeId: editingLicense.licenseTypeId,
-        ...formData
+        LicenseName: formData.LicenseName,
+        Description: formData.Description,
+        ProcessingFee: formData.ProcessingFee,
+        DepartmentId: department.departmentId,
+        IsActive: formData.IsActive
       }
       await licenseTypeService.update(updateData)
       
@@ -134,14 +138,6 @@ function DepartmentLicenses() {
 
   return (
     <Container className="mt-4">
-      {/* Breadcrumb */}
-      <Breadcrumb className="mb-4">
-        <Breadcrumb.Item onClick={() => navigate('/departments')} style={{ cursor: 'pointer' }}>
-          Departments
-        </Breadcrumb.Item>
-        <Breadcrumb.Item active>{department.departmentName}</Breadcrumb.Item>
-      </Breadcrumb>
-
       <div className="mb-4">
         <h2>{department.departmentName}</h2>
         {department.description && (
@@ -172,60 +168,64 @@ function DepartmentLicenses() {
       {/* License Types Cards */}
       <Row>
         {filteredLicenseTypes.map((licenseType) => (
-          <Col md={6} lg={4} key={licenseType.licenseTypeId} className="mb-4">
+          <Col md={3} key={licenseType.licenseTypeId} className="mb-3">
             <Card className="h-100">
               {licenseType.image && (
                 <Card.Img 
                   variant="top" 
                   src={`data:image/jpeg;base64,${licenseType.image}`}
-                  style={{ height: '200px', objectFit: 'cover' }}
+                  style={{ height: '120px', objectFit: 'cover' }}
                   alt={licenseType.licenseName}
                 />
               )}
-              <Card.Body className="d-flex flex-column">
+              <Card.Body className="p-3 d-flex flex-column">
                 <div className="d-flex justify-content-between align-items-start mb-2">
-                  <Card.Title className="mb-0">{licenseType.licenseName}</Card.Title>
+                  <Card.Title className="mb-0 h6">{licenseType.licenseName}</Card.Title>
                   {isAdmin && (
-                    <Badge bg={licenseType.isActive ? 'success' : 'secondary'}>
+                    <Badge bg={licenseType.isActive ? 'success' : 'secondary'} className="small">
                       {licenseType.isActive ? 'Active' : 'Inactive'}
                     </Badge>
                   )}
                 </div>
-                <Card.Text className="flex-grow-1">
+                <Card.Text className="flex-grow-1 small text-muted">
                   {licenseType.description || 'No description available'}
                 </Card.Text>
                 <div className="mt-auto">
-                  <div className="mb-3">
-                    <strong>Processing Fee:</strong> ₹{licenseType.processingFee}
+                  <div className="mb-2 small">
+                    <strong>Fee:</strong> ₹{licenseType.processingFee}
                   </div>
                   {isAdmin ? (
-                    <div className="d-flex gap-2">
+                    <div className="d-grid gap-1">
                       <Button 
                         variant="primary" 
                         size="sm"
                         onClick={() => handleApply(licenseType)}
-                        className="flex-fill"
                       >
                         Apply
                       </Button>
-                      <Button 
-                        variant="outline-primary" 
-                        size="sm"
-                        onClick={() => handleEdit(licenseType)}
-                      >
-                        Edit
-                      </Button>
-                      <Button 
-                        variant="outline-danger" 
-                        size="sm"
-                        onClick={() => handleDelete(licenseType.licenseTypeId)}
-                      >
-                        Delete
-                      </Button>
+                      <div className="d-flex gap-1">
+                        <Button 
+                          variant="outline-primary" 
+                          size="sm"
+                          onClick={() => handleEdit(licenseType)}
+                          className="flex-fill"
+                        >
+                          Edit
+                        </Button>
+                        <Button 
+                          variant="outline-danger" 
+                          size="sm"
+                          onClick={() => handleDelete(licenseType.licenseTypeId)}
+                          className="flex-fill"
+                        >
+                          Delete
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <Button 
                       variant="primary" 
+                      size="sm"
                       onClick={() => handleApply(licenseType)}
                       className="w-100"
                     >
@@ -240,10 +240,15 @@ function DepartmentLicenses() {
       </Row>
 
       {filteredLicenseTypes.length === 0 && !error && (
-        <div className="text-center">
+        <div className="text-center mb-5">
           <p>{searchTerm ? 'No license types found matching your search.' : 'No license types available in this department.'}</p>
         </div>
       )}
+      
+
+      
+      {/* Add spacing before footer */}
+      <div className="mb-5"></div>
 
       {/* Edit Modal */}
       <Modal show={showModal} onHide={() => setShowModal(false)}>

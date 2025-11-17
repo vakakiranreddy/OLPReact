@@ -27,10 +27,13 @@ export const requiredDocumentService = {
   // Create required document
   create: async (data: CreateRequiredDocument): Promise<RequiredDocument> => {
     try {
+      console.log('Sending create request with data:', data)
       const response = await api.post<ApiResponse<RequiredDocument>>('/RequiredDocument', data)
       return response.data.data
     } catch (error) {
       console.error('Error creating required document:', error)
+      console.error('Error response:', (error as any)?.response?.data)
+      console.error('Error status:', (error as any)?.response?.status)
       throw new Error('Failed to create required document')
     }
   },

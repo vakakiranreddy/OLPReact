@@ -1,7 +1,32 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Container, Row, Col, Card, Button, Alert, ProgressBar, Badge, Form } from 'react-bootstrap'
+import { useDispatch } from 'react-redux'
+import { Container, Row, Col, Card, Button, Alert, Form } from 'react-bootstrap'
 import { applicationQueryService } from '../services/applicationQueryService'
+import { showSuccess, showError } from '../store/slices/notificationSlice'
+import type { AppDispatch } from '../store'
+
+// QR Code library
+interface QRCodeOptions {
+  text: string;
+  width: number;
+  height: number;
+  colorDark: string;
+  colorLight: string;
+}
+
+interface QRCodeGenerator {
+  addData(data: string): void;
+  make(): void;
+  createImgTag(cellSize: number): string;
+}
+
+declare global {
+  interface Window {
+    QRCode: new (element: HTMLElement, options: QRCodeOptions) => void;
+    qrcode: (typeNumber: number, errorCorrectionLevel: string) => QRCodeGenerator;
+  }
+}
 
 import { paymentService } from '../services/paymentService'
 import { documentService } from '../services/documentService'
@@ -13,6 +38,7 @@ type UploadedDocument = DocumentResponse
 const ApplicationProcess: React.FC = () => {
   const { applicationId } = useParams<{ applicationId: string }>()
   const navigate = useNavigate()
+  const dispatch = useDispatch<AppDispatch>()
   const [application, setApplication] = useState<ApplicationDetails | null>(null)
   const [requiredDocs, setRequiredDocs] = useState<RequiredDocument[]>([])
   const [uploadedDocs, setUploadedDocs] = useState<{[key: number]: UploadedDocument}>({})
@@ -23,6 +49,7 @@ const ApplicationProcess: React.FC = () => {
   const [step, setStep] = useState<'documents' | 'payment'>('documents')
   const [isInitialized, setIsInitialized] = useState(false)
   const [previewDoc, setPreviewDoc] = useState<DocumentResponse | null>(null)
+  const qrCodeRef = useRef<HTMLDivElement>(null)
 
 
   useEffect(() => {
@@ -32,24 +59,113 @@ const ApplicationProcess: React.FC = () => {
     }
   }, [applicationId, isInitialized])
 
-  // Load uploaded documents after main data loads
+  // Load uploaded documents when conditions are met
   useEffect(() => {
     if (application && requiredDocs.length > 0 && step === 'documents') {
-      console.log('Initial document load...')
+      console.log('Loading documents for step:', step)
       loadUploadedDocuments()
     }
-  }, [application, requiredDocs, step])
+  }, [application?.applicationId, requiredDocs.length, step])
 
-  // Reload documents when returning to documents step
+  // Load QR Code library and generate QR when payment step loads
   useEffect(() => {
-    if (step === 'documents' && application && requiredDocs.length > 0) {
-      console.log('Step changed to documents, reloading documents...')
-      loadUploadedDocuments()
+    if (step === 'payment' && paymentInfo) {
+      console.log('Loading QR Code library...')
+      
+      // Check if script already exists
+      const existingScript = document.querySelector('script[src*="qrcode"]')
+      if (existingScript) {
+        console.log('QR script already loaded')
+        setTimeout(generateQRCode, 100)
+        return
+      }
+      
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js'
+      script.onload = () => {
+        console.log('QR Code library loaded')
+        setTimeout(generateQRCode, 100)
+      }
+      script.onerror = () => {
+        console.error('Failed to load QR Code library')
+        generateQRCode() // Show fallback
+      }
+      document.head.appendChild(script)
     }
-  }, [step, application, requiredDocs])
+  }, [step, paymentInfo])
 
+  const generateQRCode = () => {
+    if (!qrCodeRef.current) {
+      console.log('QR ref not available')
+      return
+    }
+    
+    if (!paymentInfo) {
+      console.log('Payment info not available')
+      return
+    }
+    
+    const amount = paymentInfo.amount || 500
+    const upiID = "vakakiranreddy1@ybl"
+    const name = "Kiran Reddy"
+    const note = `Payment for ${application?.applicationNumber || 'License Application'}`
+    
+    const upiLink = `upi://pay?pa=${encodeURIComponent(upiID)}&pn=${encodeURIComponent(name)}&am=${encodeURIComponent(amount.toString())}&cu=INR&tn=${encodeURIComponent(note)}`
+    
+    console.log('Generating QR for:', { amount, upiLink })
+    
+    // Clear old QR
+    qrCodeRef.current.innerHTML = ""
+    
+    if (window.qrcode || window.QRCode) {
+      try {
+        // Try with qrcode-generator library
+        if (window.qrcode) {
+          const qr = window.qrcode(0, 'M')
+          qr.addData(upiLink)
+          qr.make()
+          qrCodeRef.current.innerHTML = qr.createImgTag(3)
+          console.log('QR Code generated with qrcode-generator')
+        } else {
+          // Fallback to original QRCode library
+          new window.QRCode(qrCodeRef.current, {
+            text: upiLink,
+            width: 120,
+            height: 120,
+            colorDark: "#000000",
+            colorLight: "#ffffff"
+          })
+          console.log('QR Code generated with QRCode library')
+        }
+      } catch (error) {
+        console.error('Error generating QR code:', error)
+        // Show manual canvas QR
+        generateManualQR(upiLink)
+      }
+    } else {
+      // Fallback if QRCode library not loaded
+      qrCodeRef.current.innerHTML = `
+        <div style="border: 2px solid #ccc; padding: 20px; text-align: center; background: #f8f9fa;">
+          <p><strong>QR Code Loading...</strong></p>
+          <p>Amount: ₹${amount}</p>
+          <p>UPI ID: ${upiID}</p>
+          <small>Please try refreshing if QR doesn't appear</small>
+        </div>
+      `
+      console.log('QRCode library not loaded, showing fallback')
+    }
+  }
 
-
+  const generateManualQR = (text: string) => {
+    if (!qrCodeRef.current) return
+    
+    // Use Google Charts API as fallback
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(text)}`
+    qrCodeRef.current.innerHTML = `
+      <img src="${qrUrl}" alt="QR Code" style="width: 120px; height: 120px; border: 1px solid #ddd;" />
+    `
+    console.log('Generated QR using API fallback')
+  }
 
   const fetchApplicationData = async () => {
     try {
@@ -102,10 +218,10 @@ const ApplicationProcess: React.FC = () => {
         [docId]: uploadResult
       }))
       
-      alert('Document uploaded successfully!')
+      dispatch(showSuccess('Document uploaded successfully!'))
     } catch (error) {
       console.error('Error uploading file:', error)
-      alert('Error uploading file. Please try again.')
+      dispatch(showError('Error uploading file. Please try again.'))
     } finally {
       setUploading(false)
     }
@@ -118,7 +234,7 @@ const ApplicationProcess: React.FC = () => {
       setStep('payment')
     } catch (error) {
       console.error('Error getting payment info:', error)
-      alert('Error getting payment information. Please try again.')
+      dispatch(showError('Error getting payment information. Please try again.'))
     }
   }
   
@@ -141,18 +257,18 @@ const ApplicationProcess: React.FC = () => {
       reader.readAsDataURL(blob)
     } catch (error) {
       console.error('Error loading document for preview:', error)
-      alert('Error loading document preview')
+      dispatch(showError('Error loading document preview'))
     }
   }
 
   const handlePaymentSubmit = async () => {
     if (!transactionId.trim()) {
-      alert('Please enter transaction ID')
+      dispatch(showError('Please enter transaction ID'))
       return
     }
 
     if (!paymentInfo?.amount) {
-      alert('Payment amount not available. Please try again.')
+      dispatch(showError('Payment amount not available. Please try again.'))
       return
     }
 
@@ -170,16 +286,16 @@ const ApplicationProcess: React.FC = () => {
       console.log('Payment created successfully:', result)
       
       // Payment creation automatically submits the application
-      alert('Payment submitted successfully! Your application has been submitted for review.')
+      dispatch(showSuccess('Payment submitted successfully! Your application has been submitted for review.'))
       navigate('/my-applications')
     } catch (error) {
       console.error('Error submitting payment:', error)
       // Check if it's just a timeout but payment might have succeeded
       if (error && typeof error === 'object' && 'code' in error && error.code === 'ECONNABORTED') {
-        alert('Payment is being processed. Please check your applications list to verify submission.')
+        dispatch(showSuccess('Payment is being processed. Please check your applications list to verify submission.'))
         navigate('/my-applications')
       } else {
-        alert('Error submitting payment. Please try again.')
+        dispatch(showError('Error submitting payment. Please try again.'))
       }
     } finally {
       setUploading(false)
@@ -202,246 +318,198 @@ const ApplicationProcess: React.FC = () => {
     )
   }
 
-  const progressValue = step === 'documents' ? 50 : 100
-
   return (
     <Container className="mt-4">
       <Row>
-        <Col lg={8} className="mx-auto">
+        <Col lg={6}>
           <Card>
-            <Card.Header className="bg-primary text-white">
-              <h4 className="mb-1">Application Process</h4>
-              <div>
-                <strong>{application.applicationNumber}</strong>
-                <br />
-                <small>{application.licenseTypeName}</small>
-              </div>
+            <Card.Header className={step === 'payment' ? 'bg-success text-white' : 'bg-primary text-white p-2'}>
+              {step === 'payment' ? (
+                <>
+                  <h4 className="mb-1">Complete Payment</h4>
+                  <div>
+                    <strong>{application.applicationNumber}</strong>
+                    <br />
+                    <small>{application.licenseTypeName}</small>
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <strong>{application.applicationNumber}</strong>
+                  <br />
+                  <small>{application.licenseTypeName}</small>
+                  <br />
+                  <small>PDF, JPG, PNG, DOC, DOCX (Max 10MB)</small>
+                </div>
+              )}
             </Card.Header>
             
-            <Card.Body>
-              {/* Progress Steps */}
-              <div className="mb-4">
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                  <small className="text-muted">Progress</small>
-                  <small className="text-muted">{step === 'documents' ? '50%' : '100%'}</small>
-                </div>
-                <ProgressBar now={progressValue} className="mb-3" />
-                
-                <div className="d-flex justify-content-between">
-                  <div className="text-center">
-                    <div className="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center" style={{width: '30px', height: '30px', fontSize: '12px'}}>
-                      ✓
-                    </div>
-                    <div className="small text-success mt-1">Created</div>
-                  </div>
-                  <div className="text-center">
-                    <div className={`rounded-circle d-inline-flex align-items-center justify-content-center ${
-                      step === 'documents' ? 'bg-primary text-white' : 'bg-success text-white'
-                    }`} style={{width: '30px', height: '30px', fontSize: '12px'}}>
-                      {step === 'documents' ? '2' : '✓'}
-                    </div>
-                    <div className={`small mt-1 ${step === 'documents' ? 'text-primary' : 'text-success'}`}>Documents</div>
-                  </div>
-                  <div className="text-center">
-                    <div className={`rounded-circle d-inline-flex align-items-center justify-center ${
-                      step === 'payment' ? 'bg-primary text-white' : 'bg-secondary text-white'
-                    }`} style={{width: '30px', height: '30px', fontSize: '12px'}}>
-                      3
-                    </div>
-                    <div className={`small mt-1 ${step === 'payment' ? 'text-primary' : 'text-muted'}`}>Payment</div>
-                  </div>
-                </div>
-              </div>
-
+            <Card.Body className={step === 'documents' ? 'p-3' : ''}>
               {step === 'documents' && (
-                <div>
-                  <h5 className="mb-3">Upload Required Documents</h5>
+                <form onSubmit={(e) => e.preventDefault()}>
+                  <h6 className="mb-2">Required Documents</h6>
                   
 
-                  <div className="mb-3">
-                    {requiredDocs.map((doc) => (
-                      <Card key={doc.requiredDocumentId} className="mb-3">
-                        <Card.Body>
-                          <div className="d-flex justify-content-between align-items-start mb-2">
-                            <div>
-                              <h6 className="mb-1">{doc.documentName}</h6>
-                              {doc.description && (
-                                <small className="text-muted">{doc.description}</small>
-                              )}
-                            </div>
-                            {doc.isMandatory && (
-                              <Badge bg="danger">Required</Badge>
+                  {requiredDocs.map((doc) => (
+                    <Card key={doc.requiredDocumentId} className="mb-2">
+                      <Card.Body className="p-3">
+                        <div className="d-flex justify-content-between align-items-start mb-1">
+                          <div>
+                            <h6 className="mb-0">{doc.documentName}</h6>
+                            {doc.description && (
+                              <small className="text-muted">{doc.description}</small>
                             )}
                           </div>
-                          
+                        </div>
+                        
+                        <Form.Group>
+                          <Form.Control
+                            id={`file-${doc.requiredDocumentId}`}
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                            onChange={(e) => {
+                              const file = (e.target as HTMLInputElement).files?.[0]
+                              if (file) {
+                                handleFileUpload(doc.requiredDocumentId, file)
+                              }
+                            }}
+                            disabled={uploading}
+                            size="sm"
+                          />
 
                           {uploadedDocs[doc.requiredDocumentId] ? (
-                            <div>
-                              <Alert variant="success" className="mb-2">
-                                <strong>✓ Document Uploaded</strong>
-                                <br />
-                                <small>
-                                  File: {uploadedDocs[doc.requiredDocumentId].fileName}
-                                  <br />
-                                  Date: {new Date(uploadedDocs[doc.requiredDocumentId].uploadedDate).toLocaleDateString()}
-                                  <br />
+                            <Alert variant="success" className="mt-1 mb-0 py-2">
+                              <small>
+                                ✓ {uploadedDocs[doc.requiredDocumentId].fileName} ({uploadedDocs[doc.requiredDocumentId].fileSizeFormatted || 'Unknown size'})
+                                <div className="d-flex gap-2 mt-1">
                                   <Button 
                                     variant="outline-info" 
                                     size="sm"
-                                    className="mt-2"
                                     onClick={() => handleViewDocument(uploadedDocs[doc.requiredDocumentId])}
                                   >
-                                    View Document
+                                    View
                                   </Button>
-                                </small>
-                                {previewDoc?.documentId === uploadedDocs[doc.requiredDocumentId].documentId && (
-                                  <div className="mt-3">
-                                    {previewDoc.fileData ? (
-                                      <>
-                                        {previewDoc.fileType?.startsWith('image/') && (
-                                          <img 
-                                            src={`data:${previewDoc.fileType};base64,${previewDoc.fileData}`} 
-                                            alt={previewDoc.documentName}
-                                            className="img-fluid"
-                                            style={{ maxHeight: '300px' }}
-                                          />
-                                        )}
-                                        {previewDoc.fileType === 'application/pdf' && (
-                                          <iframe
-                                            src={`data:application/pdf;base64,${previewDoc.fileData}`}
-                                            width="100%"
-                                            height="400px"
-                                            title={previewDoc.documentName}
-                                          />
-                                        )}
-                                        {!previewDoc.fileType?.startsWith('image/') && previewDoc.fileType !== 'application/pdf' && (
-                                          <div className="alert alert-info">Preview not available for this file type</div>
-                                        )}
-                                      </>
-                                    ) : (
-                                      <div className="alert alert-warning">Loading preview...</div>
-                                    )}
-                                    <Button 
-                                      variant="outline-secondary" 
-                                      size="sm"
-                                      className="mt-2"
-                                      onClick={() => setPreviewDoc(null)}
-                                    >
-                                      Hide Preview
-                                    </Button>
-                                  </div>
-                                )}
-                              </Alert>
-                              <Form.Group>
-                                <Form.Label className="small text-muted">Replace document (optional):</Form.Label>
-                                <Form.Control
-                                  id={`file-${doc.requiredDocumentId}`}
-                                  type="file"
-                                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                                  onChange={(e) => {
-                                    const file = (e.target as HTMLInputElement).files?.[0]
-                                    if (file) {
-                                      handleFileUpload(doc.requiredDocumentId, file)
-                                    }
-                                  }}
-                                  disabled={uploading}
-                                  size="sm"
-                                />
-                              </Form.Group>
-                            </div>
+                                  <Button 
+                                    variant="link" 
+                                    size="sm" 
+                                    className="p-0 text-danger"
+                                    onClick={() => {
+                                      setUploadedDocs(prev => {
+                                        const newDocs = {...prev}
+                                        delete newDocs[doc.requiredDocumentId]
+                                        return newDocs
+                                      })
+                                    }}
+                                  >
+                                    Remove
+                                  </Button>
+                                </div>
+                              </small>
+                              {previewDoc?.documentId === uploadedDocs[doc.requiredDocumentId].documentId && (
+                                <div className="mt-3">
+                                  {previewDoc.fileData ? (
+                                    <>
+                                      {previewDoc.fileType?.startsWith('image/') && (
+                                        <img 
+                                          src={`data:${previewDoc.fileType};base64,${previewDoc.fileData}`} 
+                                          alt={previewDoc.documentName}
+                                          className="img-fluid"
+                                          style={{ maxHeight: '300px' }}
+                                        />
+                                      )}
+                                      {previewDoc.fileType === 'application/pdf' && (
+                                        <iframe
+                                          src={`data:application/pdf;base64,${previewDoc.fileData}`}
+                                          width="100%"
+                                          height="400px"
+                                          title={previewDoc.documentName}
+                                        />
+                                      )}
+                                      {!previewDoc.fileType?.startsWith('image/') && previewDoc.fileType !== 'application/pdf' && (
+                                        <div className="alert alert-info">Preview not available for this file type</div>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <div className="alert alert-warning">Loading preview...</div>
+                                  )}
+                                  <Button 
+                                    variant="outline-secondary" 
+                                    size="sm"
+                                    className="mt-2"
+                                    onClick={() => setPreviewDoc(null)}
+                                  >
+                                    Hide Preview
+                                  </Button>
+                                </div>
+                              )}
+                            </Alert>
                           ) : (
-                            <Form.Group>
-                              <Form.Control
-                                id={`file-${doc.requiredDocumentId}`}
-                                type="file"
-                                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                                onChange={(e) => {
-                                  const file = (e.target as HTMLInputElement).files?.[0]
-                                  if (file) {
-                                    handleFileUpload(doc.requiredDocumentId, file)
-                                  }
-                                }}
-                                disabled={uploading}
-                                size="sm"
-                              />
-                              <Form.Text className="text-muted">
-                                Accepted formats: PDF, JPG, PNG, DOC, DOCX (Max 10MB)
-                              </Form.Text>
-                            </Form.Group>
+                            <div className="mt-1">
+                              <small className="text-muted">No file uploaded</small>
+                            </div>
                           )}
-                        </Card.Body>
-                      </Card>
-                    ))}
-                  </div>
+                        </Form.Group>
+                      </Card.Body>
+                    </Card>
+                  ))}
                   
-                  <div className="text-center mt-4">
+                  <div className="text-center mt-3">
                     <Button 
                       variant="primary" 
-                      onClick={handleNext}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        handleNext()
+                      }}
                       disabled={uploading || !isFormValid()}
-                      className="me-2"
                     >
                       {!isFormValid() ? 'Upload Required Documents' : 'Next - Proceed to Payment'}
                     </Button>
-                    
-
-                    
                     {!isFormValid() && (
-                      <div className="text-danger mt-2">
+                      <div className="text-danger mt-1">
                         <small>Please upload all required documents to continue</small>
                       </div>
                     )}
                   </div>
-                </div>
+                </form>
               )}
 
               {step === 'payment' && (
-                <div>
-                  <Alert variant="success" className="mb-3">
-                    <strong>Documents Uploaded Successfully!</strong>
-                    <br />
-                    All required documents have been uploaded. Please complete the payment to submit your application.
-                  </Alert>
-
-                  <h5 className="mb-3">Payment Summary</h5>
+                <form onSubmit={(e) => e.preventDefault()}>
+                  <h6 className="mb-2">Payment Summary</h6>
                   <Card className="mb-3">
                     <Card.Body>
-                      <Row>
-                        <Col sm={6}>
-                          <strong>Application Number:</strong>
-                          <br />
-                          {application.applicationNumber}
-                        </Col>
-                        <Col sm={6}>
-                          <strong>License Type:</strong>
-                          <br />
-                          {application.licenseTypeName}
-                        </Col>
-                      </Row>
-                      <hr />
-                      <Row>
-                        <Col>
-                          <h5 className="text-success mb-0">
-                            Total Amount: ₹{paymentInfo?.amount || 500}
+                      <Row className="align-items-center">
+                        <Col md={8}>
+                          <div className="mb-2">
+                            <small><strong>App:</strong> {application.applicationNumber}</small><br/>
+                            <small><strong>Type:</strong> {application.licenseTypeName}</small>
+                          </div>
+                          <h5 className="text-success mb-2">
+                            Amount: ₹{paymentInfo?.amount || 500}
                           </h5>
+                          <small className="text-muted">
+                            Scan with any UPI app (GPay, PhonePe, Paytm, etc.)
+                          </small>
+                          
+                          {paymentInfo?.paymentInstructions && (
+                            <>
+                              <hr className="my-2" />
+                              <Alert variant="warning" className="mb-0 py-2">
+                                <small><strong>Instructions:</strong> {paymentInfo.paymentInstructions}</small>
+                              </Alert>
+                            </>
+                          )}
+                        </Col>
+                        <Col md={4} className="text-center">
+                          <div ref={qrCodeRef} className="d-flex justify-content-center"></div>
                         </Col>
                       </Row>
-                      
-                      {paymentInfo?.paymentInstructions && (
-                        <>
-                          <hr />
-                          <Alert variant="warning" className="mb-0">
-                            <strong>Payment Instructions:</strong>
-                            <br />
-                            {paymentInfo.paymentInstructions}
-                          </Alert>
-                        </>
-                      )}
                     </Card.Body>
                   </Card>
 
                   <Form.Group className="mb-3">
-                    <Form.Label><strong>Transaction ID *</strong></Form.Label>
+                    <Form.Label className="mb-1"><strong>Transaction ID *</strong></Form.Label>
                     <Form.Control
                       type="text"
                       value={transactionId}
@@ -450,37 +518,162 @@ const ApplicationProcess: React.FC = () => {
                       required
                     />
                     <Form.Text className="text-muted">
-                      Enter the transaction ID from your payment confirmation
+                      <small>Enter transaction ID from payment confirmation</small>
                     </Form.Text>
                   </Form.Group>
 
                   <div className="d-grid gap-2">
                     <Button
-                      variant="primary"
+                      variant="success"
                       size="lg"
-                      onClick={handlePaymentSubmit}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        handlePaymentSubmit()
+                      }}
                       disabled={!transactionId.trim() || uploading}
                     >
-                      {uploading ? 'Processing Payment...' : 
-                       !transactionId.trim() ? 'Enter Transaction ID to Continue' : 'Submit Payment & Application'}
+                      {uploading ? 'Processing...' : 
+                       !transactionId.trim() ? 'Enter Transaction ID to Continue' : 
+                       'Submit Payment & Application'}
                     </Button>
                     
                     <Button
                       variant="outline-secondary"
-                      onClick={async () => {
+                      type="button"
+                      onClick={async (e) => {
+                        e.preventDefault()
                         setStep('documents')
                         setPreviewDoc(null) // Clear any preview
                         await loadUploadedDocuments() // Wait for documents to load
                       }}
+                      disabled={uploading}
                     >
                       Back to Documents
                     </Button>
                   </div>
-                </div>
+                </form>
               )}
             </Card.Body>
           </Card>
         </Col>
+        
+        {step === 'documents' && (
+          <Col lg={6}>
+            <Card className="h-100">
+              <Card.Header className="bg-success text-white p-3">
+                <h5 className="mb-0">📋 Application Process</h5>
+              </Card.Header>
+              <Card.Body className="p-4">
+                <div className="d-flex flex-column gap-3">
+                  <div className="d-flex align-items-center">
+                    <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style={{width: '30px', height: '30px', fontSize: '14px'}}>1</div>
+                    <span>Upload all required documents</span>
+                  </div>
+                  <div className="d-flex align-items-center">
+                    <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style={{width: '30px', height: '30px', fontSize: '14px'}}>2</div>
+                    <span>Pay the processing fee</span>
+                  </div>
+                  <div className="d-flex align-items-center">
+                    <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style={{width: '30px', height: '30px', fontSize: '14px'}}>3</div>
+                    <span>A reviewer will be assigned</span>
+                  </div>
+                  <div className="d-flex align-items-center">
+                    <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style={{width: '30px', height: '30px', fontSize: '14px'}}>4</div>
+                    <span>You will be notified with every status change</span>
+                  </div>
+                  <div className="d-flex align-items-center">
+                    <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style={{width: '30px', height: '30px', fontSize: '14px'}}>5</div>
+                    <span>You can track your application status</span>
+                  </div>
+                  <div className="d-flex align-items-center">
+                    <div className="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3" style={{width: '30px', height: '30px', fontSize: '14px'}}>✓</div>
+                    <span>Once approved, you will get your license certificate</span>
+                  </div>
+                  <div className="d-flex align-items-center">
+                    <div className="bg-info text-white rounded-circle d-flex align-items-center justify-content-center me-3" style={{width: '30px', height: '30px', fontSize: '12px'}}>📧</div>
+                    <span>You can find it in your page and also get it through mail</span>
+                  </div>
+                </div>
+                
+                <div className="text-center">
+                  <img 
+                    src="/images/DigitalLisence.png" 
+                    alt="License" 
+                    className="img-fluid"
+                    style={{ maxHeight: '350px', objectFit: 'contain' }}
+                  />
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+        )}
+        
+        {step === 'payment' && (
+          <Col lg={6}>
+            <Card className="h-100">
+              <Card.Header className="bg-info text-white p-3">
+                <h5 className="mb-0">Payment Options</h5>
+              </Card.Header>
+              <Card.Body className="p-4">
+                <div className="mb-4">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <h6 className="mb-0">Pay through UPI:</h6>
+                    <small className="text-muted">UPI ID: <strong>vakakiranreddy1@ybl</strong></small>
+                  </div>
+                  <div className="d-flex flex-wrap gap-2 mb-3">
+                    <img src="/images/Gpay.jpg" alt="Google Pay" style={{height: '80px', objectFit: 'contain'}} />
+                    <img src="/images/phonepay.jpg" alt="PhonePe" style={{height: '80px', objectFit: 'contain'}} />
+                    <img src="/images/Paytm.png" alt="Paytm" style={{height: '80px', objectFit: 'contain'}} />
+                  </div>
+                </div>
+                
+                <div className="mb-4">
+                  <h6 className="mb-3">Bank Transfer:</h6>
+                  <div className="bg-light p-3 rounded">
+                    <div className="row">
+                      <div className="col-6">
+                        <small><strong>Account Name:</strong></small><br/>
+                        <small>Andhra Pradesh Govt</small>
+                      </div>
+                      <div className="col-6">
+                        <small><strong>Account Number:</strong></small><br/>
+                        <small>1234567890123456</small>
+                      </div>
+                    </div>
+                    <div className="row mt-2">
+                      <div className="col-6">
+                        <small><strong>IFSC Code:</strong></small><br/>
+                        <small>SBIN0001234</small>
+                      </div>
+                      <div className="col-6">
+                        <small><strong>Bank:</strong></small><br/>
+                        <small>State Bank of India</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="overflow-hidden">
+                  <div className="d-flex" style={{animation: 'scroll 10s linear infinite'}}>
+                    <img src="/images/L1.png" alt="License 1" style={{height: '120px', objectFit: 'contain', marginRight: '20px'}} />
+                    <img src="/images/L2.png" alt="License 2" style={{height: '120px', objectFit: 'contain', marginRight: '20px'}} />
+                    <img src="/images/medcet.png" alt="Medical License" style={{height: '120px', objectFit: 'contain', marginRight: '20px'}} />
+                    <img src="/images/Lisence.png" alt="License" style={{height: '120px', objectFit: 'contain', marginRight: '20px'}} />
+                    <img src="/images/L1.png" alt="License 1" style={{height: '120px', objectFit: 'contain', marginRight: '20px'}} />
+                    <img src="/images/L2.png" alt="License 2" style={{height: '120px', objectFit: 'contain', marginRight: '20px'}} />
+                  </div>
+                  <style>{`
+                    @keyframes scroll {
+                      0% { transform: translateX(0); }
+                      100% { transform: translateX(-50%); }
+                    }
+                  `}</style>
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+        )}
       </Row>
     </Container>
   )
