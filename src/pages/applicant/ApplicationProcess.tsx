@@ -214,25 +214,34 @@ const ApplicationProcess: React.FC = () => {
   const fetchApplicationData = async () => {
     setLoading(true) // Always set loading to true at start
     try {
-      const appData = await applicationQueryService.getApplicationDetails(Number(applicationId))
-      setApplication(appData)
+      // Use the common method that combines all 3 API calls
+      const completeDetails = await applicationQueryService.getCompleteDetails(Number(applicationId))
       
-      const docs = await requiredDocumentService.getByLicenseType(appData.licenseTypeId)
+      // Set application details directly from response
+      setApplication(completeDetails.applicationDetails)
+      
+      // Map required documents to the expected format
+      const docs = completeDetails.requiredDocuments.map(doc => ({
+        requiredDocumentId: doc.requiredDocumentId,
+        licenseTypeId: completeDetails.applicationDetails.licenseTypeId,
+        documentName: doc.documentName,
+        description: doc.description,
+        isMandatory: doc.isMandatory
+      }))
       setRequiredDocs(docs)
       
-      const uploadedDocuments = await documentService.getApplicationDocuments(Number(applicationId))
+      // Use uploaded documents from the complete details response
       const uploadedMap: {[key: number]: UploadedDocument} = {}
-      
-      // Map uploaded documents by matching documentName with required documents
-      uploadedDocuments.forEach(uploadedDoc => {
-        const matchingRequiredDoc = docs.find(reqDoc => reqDoc.documentName === uploadedDoc.documentName)
-        if (matchingRequiredDoc) {
+      completeDetails.applicationDocuments.forEach(uploadedDoc => {
+        // Only map documents that have a valid requiredDocumentId (> 0)
+        if (uploadedDoc.requiredDocumentId > 0) {
           const docWithSize = {
             ...uploadedDoc,
-            requiredDocumentId: matchingRequiredDoc.requiredDocumentId, // Add the missing requiredDocumentId
-            fileSizeFormatted: uploadedDoc.fileSizeFormatted || formatFileSize(uploadedDoc.fileSize || 0)
+            applicationId: completeDetails.applicationDetails.applicationId,
+            uploadedAt: uploadedDoc.uploadedDate,
+            fileSizeFormatted: formatFileSize(uploadedDoc.fileSize || 0)
           }
-          uploadedMap[matchingRequiredDoc.requiredDocumentId] = docWithSize
+          uploadedMap[uploadedDoc.requiredDocumentId] = docWithSize
         }
       })
       setUploadedDocs(uploadedMap)

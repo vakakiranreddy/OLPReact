@@ -4,7 +4,7 @@ import { useDispatch } from 'react-redux'
 import { Container, Row, Col, Card, Button, Alert, Form } from 'react-bootstrap'
 import { applicationQueryService } from '../../services/applicationQueryService'
 import { documentService } from '../../services/documentService'
-import { requiredDocumentService } from '../../services/requiredDocumentService'
+
 import { showSuccess, showError } from '../../app/store/slices/notificationSlice'
 import type { ApplicationDetails, RequiredDocument, DocumentResponse } from '../../types'
 import type { AppDispatch } from '../../app/store'
@@ -40,25 +40,54 @@ const DocumentUpload: React.FC = () => {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const appData = await applicationQueryService.getApplicationDetails(Number(applicationId))
+      // Use the common method that combines all 3 API calls
+      const completeDetails = await applicationQueryService.getCompleteDetails(Number(applicationId))
+      
+      // Map application details to expected format (based on actual API response)
+      const appData: ApplicationDetails = {
+        applicationId: completeDetails.applicationDetails.applicationId,
+        applicationNumber: completeDetails.applicationDetails.applicationNumber,
+        licenseTypeId: completeDetails.applicationDetails.licenseTypeId,
+        licenseTypeName: completeDetails.applicationDetails.licenseTypeName,
+        applicantName: completeDetails.applicationDetails.applicantName,
+        applicantEmail: completeDetails.applicationDetails.applicantEmail,
+        applicantPhone: completeDetails.applicationDetails.applicantPhone,
+        status: completeDetails.applicationDetails.status,
+        appliedDate: completeDetails.applicationDetails.appliedDate,
+        departmentName: completeDetails.applicationDetails.departmentName,
+        reviewerId: completeDetails.applicationDetails.reviewerId,
+        reviewerName: completeDetails.applicationDetails.reviewerName,
+        paymentAmount: completeDetails.applicationDetails.paymentAmount
+      }
       setApplication(appData)
       
-      const docs = await requiredDocumentService.getByLicenseType(appData.licenseTypeId)
+      // Map required documents to the expected format
+      const docs = completeDetails.requiredDocuments.map(doc => ({
+        requiredDocumentId: doc.requiredDocumentId,
+        licenseTypeId: completeDetails.applicationDetails.licenseTypeId,
+        documentName: doc.documentName,
+        description: doc.description,
+        isMandatory: doc.isMandatory
+      }))
       setRequiredDocs(docs)
       
-      const uploadedDocuments = await documentService.getApplicationDocuments(Number(applicationId))
+      // Use uploaded documents from the complete details response
       const uploadedMap: {[key: number]: DocumentResponse} = {}
-      
-      // Map uploaded documents by matching documentName with required documents
-      uploadedDocuments.forEach(uploadedDoc => {
-        const matchingRequiredDoc = docs.find(reqDoc => reqDoc.documentName === uploadedDoc.documentName)
-        if (matchingRequiredDoc) {
-          const docWithSize = {
-            ...uploadedDoc,
-            requiredDocumentId: matchingRequiredDoc.requiredDocumentId,
-            fileSizeFormatted: uploadedDoc.fileSizeFormatted || formatFileSize(uploadedDoc.fileSize || 0)
+      completeDetails.applicationDocuments.forEach(uploadedDoc => {
+        // Only map documents that have a valid requiredDocumentId (> 0)
+        if (uploadedDoc.requiredDocumentId > 0) {
+          const docWithSize: DocumentResponse = {
+            documentId: uploadedDoc.documentId,
+            applicationId: completeDetails.applicationDetails.applicationId,
+            requiredDocumentId: uploadedDoc.requiredDocumentId,
+            documentName: uploadedDoc.documentName,
+            fileName: uploadedDoc.fileName,
+            fileType: uploadedDoc.fileType,
+            fileSize: uploadedDoc.fileSize,
+            fileSizeFormatted: formatFileSize(uploadedDoc.fileSize || 0),
+            uploadedDate: uploadedDoc.uploadedDate
           }
-          uploadedMap[matchingRequiredDoc.requiredDocumentId] = docWithSize
+          uploadedMap[uploadedDoc.requiredDocumentId] = docWithSize
         }
       })
       setUploadedDocs(uploadedMap)

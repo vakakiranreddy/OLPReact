@@ -69,29 +69,55 @@ export interface ApplicationDocument {
   uploadedAt: string
 }
 
+export interface ApiApplicationDocument {
+  documentId: number
+  requiredDocumentId: number
+  documentName: string
+  fileName: string
+  fileType: string
+  fileSize: number
+  uploadedDate: string
+}
+
 export interface CompleteApplicationDetails {
   applicationDetails: {
     applicationId: number
     applicationNumber: string
+    status: number
+    appliedDate: string
+    applicantRemarks?: string
+    rejectionReason?: string
+    applicantName: string
+    applicantEmail: string
+    applicantPhone: string
     licenseTypeId: number
     licenseTypeName: string
-    userId: number
-    firstName: string
-    lastName: string
-    email: string
-    status: string
-    submittedAt: string
+    departmentName: string
     reviewerId?: number
     reviewerName?: string
-    departmentId: number
-    departmentName: string
+    departmentHeadName?: string
+    verifiedDate?: string
+    paymentDate?: string
+    approvedDate?: string
+    rejectedDate?: string
+    paymentAmount?: number
+    paymentStatus?: number
   }
   requiredDocuments: {
     requiredDocumentId: number
-    licenseTypeId: number
     documentName: string
     description: string
-    isRequired: boolean
+    isMandatory: boolean
+    licenseTypeName: string
+    mandatoryText: string
   }[]
-  applicationDocuments: ApplicationDocument[]
+  applicationDocuments: {
+    documentId: number
+    requiredDocumentId: number
+    documentName: string
+    fileName: string
+    fileType: string
+    fileSize: number
+    uploadedDate: string
+  }[]
 }
