@@ -58,3 +58,40 @@ export interface AssignReviewerRequest {
   ApplicationId: number
   ReviewerId: number
 }
+
+export interface ApplicationDocument {
+  applicationDocumentId: number
+  applicationId: number
+  requiredDocumentId: number
+  fileName: string
+  fileSize: number
+  fileType: string
+  uploadedAt: string
+}
+
+export interface CompleteApplicationDetails {
+  applicationDetails: {
+    applicationId: number
+    applicationNumber: string
+    licenseTypeId: number
+    licenseTypeName: string
+    userId: number
+    firstName: string
+    lastName: string
+    email: string
+    status: string
+    submittedAt: string
+    reviewerId?: number
+    reviewerName?: string
+    departmentId: number
+    departmentName: string
+  }
+  requiredDocuments: {
+    requiredDocumentId: number
+    licenseTypeId: number
+    documentName: string
+    description: string
+    isRequired: boolean
+  }[]
+  applicationDocuments: ApplicationDocument[]
+}

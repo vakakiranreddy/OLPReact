@@ -32,8 +32,11 @@ export const requiredDocumentService = {
       return response.data.data
     } catch (error) {
       console.error('Error creating required document:', error)
-      console.error('Error response:', (error as any)?.response?.data)
-      console.error('Error status:', (error as any)?.response?.status)
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: unknown; status?: number } }
+        console.error('Error response:', axiosError.response?.data)
+        console.error('Error status:', axiosError.response?.status)
+      }
       throw new Error('Failed to create required document')
     }
   },

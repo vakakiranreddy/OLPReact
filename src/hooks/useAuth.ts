@@ -1,6 +1,6 @@
 import { useSelector } from 'react-redux'
-import { RootState } from '../store'
-import { UserRole } from '../utils/roles'
+import { RootState } from '../app/store'
+import { UserRole } from '../types/enums'
 
 export const useAuth = () => {
   const { isAuthenticated, user, loading } = useSelector((state: RootState) => state.auth)

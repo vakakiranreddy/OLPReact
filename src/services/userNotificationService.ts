@@ -1,5 +1,6 @@
 import api from './api'
 import type { ApiResponse } from '../types'
+import type { BroadcastNotification } from './broadcastNotificationService'
 
 export interface UserNotification {
   notificationId: number
@@ -18,6 +19,11 @@ export interface CreateUserNotificationDto {
   userId: number
   applicationId?: number
   sendEmail?: boolean
+}
+
+export interface AllNotificationsResponse {
+  userNotifications: UserNotification[]
+  broadcastNotifications: BroadcastNotification[]
 }
 
 export const userNotificationService = {
@@ -82,6 +88,17 @@ export const userNotificationService = {
     } catch (error) {
       console.error('Error marking notification as read:', error)
       throw new Error('Failed to mark notification as read')
+    }
+  },
+
+  // Get all notifications (user + broadcast)
+  getAllNotifications: async (): Promise<AllNotificationsResponse> => {
+    try {
+      const response = await api.get<ApiResponse<AllNotificationsResponse>>('/user-notifications/all-notifications')
+      return response.data.data
+    } catch (error) {
+      console.error('Error fetching all notifications:', error)
+      throw new Error('Failed to fetch all notifications')
     }
   }
 }

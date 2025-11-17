@@ -1,6 +1,6 @@
 import axios from 'axios'
-import { store } from '../store'
-import { logout } from '../store/slices/authSlice'
+import { store } from '../app/store'
+import { logout } from '../app/store/slices/authSlice'
 
 // API Base URL from environment variables with fallback
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://localhost:7204/api'

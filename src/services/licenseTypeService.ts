@@ -69,9 +69,12 @@ export const licenseTypeService = {
       console.log('Sending update data:', data)
       const response = await api.put<ApiResponse<LicenseType>>('/licensetype', data)
       return response.data.data
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error updating license type:', error)
-      console.error('Error details:', error.response?.data)
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: unknown } }
+        console.error('Error details:', axiosError.response?.data)
+      }
       throw new Error('Failed to update license type')
     }
   },

@@ -2,6 +2,7 @@ import api from './api'
 import type { 
   ApplicationListItem,
   ApplicationDetails,
+  CompleteApplicationDetails,
   ApiResponse 
 } from '../types'
 
@@ -157,6 +158,21 @@ export const applicationQueryService = {
     } catch (error) {
       console.error('Error fetching my statistics:', error)
       throw new Error('Failed to fetch my statistics')
+    }
+  },
+
+  // Get complete application details (application + required docs + uploaded docs)
+  getCompleteDetails: async (applicationId: number): Promise<CompleteApplicationDetails> => {
+    try {
+      const url = `/application-queries/${applicationId}/complete-details`
+      console.log('Making API call to:', url)
+      const response = await api.get<ApiResponse<CompleteApplicationDetails>>(url)
+      console.log('API response:', response.data)
+      return response.data.data
+    } catch (error) {
+      console.error('Error fetching complete application details:', error)
+      console.error('Error details:', error)
+      throw new Error('Failed to fetch complete application details')
     }
   }
 }

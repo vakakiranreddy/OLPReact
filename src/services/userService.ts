@@ -215,5 +215,16 @@ export const userService = {
       console.error('Error fetching user counts by role:', error)
       throw new Error('Failed to fetch user counts by role')
     }
+  },
+
+  // Get users with departments in one API call
+  getUsersWithDepartments: async (): Promise<{ users: UserResponse[], departments: any[] }> => {
+    try {
+      const response = await api.get('/user/with-departments')
+      return response.data.data
+    } catch (error) {
+      console.error('Error fetching users with departments:', error)
+      throw new Error('Failed to fetch user management data')
+    }
   }
 }
