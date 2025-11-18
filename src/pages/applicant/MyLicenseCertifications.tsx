@@ -15,28 +15,25 @@ const MyLicenseCertifications: React.FC = () => {
 
   const fetchLicenseCertifications = async () => {
     try {
-      const data = await applicationQueryService.getMyApplications()
+      const data = await applicationQueryService.getMyApplicationsWithCertificates()
       
       // Filter approved applications for licenses
-      const approved = data.filter((app: ApplicationListItem) => app.status === 8) // Status 8 = Approved
+      const approved = data.filter((app: any) => app.status === 8) // Status 8 = Approved
       setApprovedApplications(approved)
       
-      // Fetch only Official License Certificate documents for approved applications
+      // Process certificates data
       const certificatesData: { [key: number]: CertificateWithData[] } = {}
-      for (const app of approved) {
-        try {
-          const certs = await documentService.getApplicationCertificatesWithData(app.applicationId)
+      approved.forEach((app: any) => {
+        if (app.certificates && app.certificates.length > 0) {
           // Filter to show only Official License Certificate documents
-          const officialCerts = certs.filter((cert: CertificateWithData) => 
+          const officialCerts = app.certificates.filter((cert: CertificateWithData) => 
             cert.documentName.toLowerCase().includes('official license certificate')
           )
           if (officialCerts.length > 0) {
             certificatesData[app.applicationId] = officialCerts
           }
-        } catch (error) {
-          console.error(`Error fetching certificates for application ${app.applicationId}:`, error)
         }
-      }
+      })
       setCertificates(certificatesData)
     } catch (error) {
       console.error('Error fetching license certifications:', error)

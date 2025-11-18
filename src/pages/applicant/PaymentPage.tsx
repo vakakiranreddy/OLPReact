@@ -104,21 +104,12 @@ const PaymentPage: React.FC = () => {
 
   const fetchData = async () => {
     try {
-      const appData = await applicationQueryService.getApplicationDetails(Number(applicationId))
-      setApplication(appData)
-      
-      const payInfo = await paymentService.getPaymentInfo(Number(applicationId))
-      setPaymentInfo(payInfo)
+      const data = await applicationQueryService.getApplicationPaymentDetails(Number(applicationId))
+      setApplication(data.applicationDetails)
+      setPaymentInfo(data.paymentInfo)
     } catch (error) {
       console.error('Error fetching data:', error)
-      // If payment info fails, create from application data
-      if (application) {
-        setPaymentInfo({
-          applicationId: application.applicationId,
-          amount: application.paymentAmount || 0,
-          paymentInstructions: 'Please complete the payment using your preferred method and enter the transaction ID below.'
-        })
-      }
+      dispatch(showError('Error loading payment details'))
     } finally {
       setLoading(false)
     }

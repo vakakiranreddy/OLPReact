@@ -11,20 +11,10 @@ export const fetchReviewerApplications = createAsyncThunk(
   async (_, { dispatch }) => {
     try {
       dispatch(setLoading(true))
-      const [pendingData, reviewedData] = await Promise.all([
-        applicationQueryService.getMyPendingReviews(),
-        applicationQueryService.getMyReviewedApplications()
-      ])
+      const dashboardData = await applicationQueryService.getReviewerDashboard()
       
-      const allApplications = [...pendingData, ...reviewedData]
-      const uniqueApplications = allApplications.filter((app, index, self) => 
-        index === self.findIndex(a => a.applicationId === app.applicationId)
-      )
-      
-      dispatch(setApplications(uniqueApplications))
-      
-      const stats = await applicationQueryService.getMyStatistics()
-      dispatch(setStatistics(stats))
+      dispatch(setApplications(dashboardData.applications))
+      dispatch(setStatistics(dashboardData.myStats))
     } catch {
       dispatch(setError('Error fetching applications'))
       dispatch(showError('Failed to load applications'))
@@ -41,7 +31,6 @@ export const verifyApplication = createAsyncThunk(
     try {
       await applicationActionService.verify(verifyData)
       dispatch(showSuccess('Application verified successfully!'))
-      dispatch(fetchReviewerApplications())
     } catch {
       dispatch(showError('Error verifying application'))
     }
@@ -55,7 +44,6 @@ export const rejectApplication = createAsyncThunk(
     try {
       await applicationActionService.reject(rejectData)
       dispatch(showSuccess('Application rejected successfully!'))
-      dispatch(fetchReviewerApplications())
     } catch {
       dispatch(showError('Error rejecting application'))
     }

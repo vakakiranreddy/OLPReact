@@ -82,7 +82,8 @@ const RequiredDocuments: React.FC = () => {
     
     try {
       console.log('Creating document with data:', newDoc)
-      await requiredDocumentService.create(newDoc)
+      const result = await requiredDocumentService.createAndGetList(newDoc)
+      setRequiredDocuments(result.allDocuments)
       setShowCreateDoc(false)
       setNewDoc({
         DocumentName: '',
@@ -91,9 +92,6 @@ const RequiredDocuments: React.FC = () => {
         IsMandatory: true,
         LicenseTypeId: selectedLicenseTypeForDocs || 0
       })
-      if (selectedLicenseTypeForDocs) {
-        handleLicenseTypeClick(selectedLicenseTypeForDocs)
-      }
     } catch (error) {
       console.error('Error creating document:', error)
       const errorMessage = error instanceof Error ? error.message : 
@@ -106,7 +104,7 @@ const RequiredDocuments: React.FC = () => {
 
   const handleEditDoc = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!editingDoc) return
+    if (!editingDoc || !selectedLicenseTypeForDocs) return
     
     try {
       const updateData: UpdateRequiredDocument = {
@@ -115,27 +113,23 @@ const RequiredDocuments: React.FC = () => {
         description: editingDoc.description,
         isMandatory: editingDoc.isMandatory
       }
-      await requiredDocumentService.update(updateData)
+      const result = await requiredDocumentService.updateAndGetList(updateData, selectedLicenseTypeForDocs)
+      setRequiredDocuments(result.allDocuments)
       setShowEditDoc(false)
       setEditingDoc(null)
-      if (selectedLicenseTypeForDocs) {
-        handleLicenseTypeClick(selectedLicenseTypeForDocs)
-      }
     } catch (error) {
       console.error('Error updating document:', error)
     }
   }
 
   const handleDeleteDoc = async (docId: number) => {
-    if (window.confirm('Are you sure you want to delete this document?')) {
-      try {
-        await requiredDocumentService.delete(docId)
-        if (selectedLicenseTypeForDocs) {
-          handleLicenseTypeClick(selectedLicenseTypeForDocs)
-        }
-      } catch (error) {
-        console.error('Error deleting document:', error)
+    try {
+      if (selectedLicenseTypeForDocs) {
+        const updatedDocuments = await requiredDocumentService.deleteAndGetList(docId, selectedLicenseTypeForDocs)
+        setRequiredDocuments(updatedDocuments)
       }
+    } catch (error) {
+      console.error('Error deleting document:', error)
     }
   }
 

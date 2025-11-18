@@ -110,5 +110,38 @@ export const departmentService = {
       console.error('Error uploading department image:', error)
       throw new Error('Failed to upload department image')
     }
+  },
+
+  // Create department and get updated list
+  createAndGetList: async (data: CreateDepartment): Promise<{ createdDepartment: Department; allDepartments: Department[] }> => {
+    try {
+      const response = await api.post<ApiResponse<{ createdDepartment: Department; allDepartments: Department[] }>>('/department/create-with-updated-list', data)
+      return response.data.data
+    } catch (error) {
+      console.error('Error creating department:', error)
+      throw new Error('Failed to create department')
+    }
+  },
+
+  // Update department and get updated list
+  updateAndGetList: async (data: UpdateDepartment): Promise<{ updatedDepartment: Department; allDepartments: Department[] }> => {
+    try {
+      const response = await api.put<ApiResponse<{ updatedDepartment: Department; allDepartments: Department[] }>>('/department/update-with-list', data)
+      return response.data.data
+    } catch (error) {
+      console.error('Error updating department:', error)
+      throw new Error('Failed to update department')
+    }
+  },
+
+  // Delete department and get updated list
+  deleteAndGetList: async (id: number): Promise<Department[]> => {
+    try {
+      const response = await api.delete<ApiResponse<Department[]>>(`/department/${id}/delete-with-updated-list`)
+      return response.data.data
+    } catch (error) {
+      console.error('Error deleting department:', error)
+      throw new Error('Failed to delete department')
+    }
   }
 }

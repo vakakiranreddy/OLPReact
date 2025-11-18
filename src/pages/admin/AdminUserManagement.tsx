@@ -75,7 +75,15 @@ const UserManagement: React.FC = () => {
     e.preventDefault()
     setCreatingUser(true)
     try {
-      await userService.adminCreateUser(newUser)
+      const result = await userService.adminCreateUserAndGetList(newUser)
+      setUsers(result.users)
+      setDepartments(result.departments.map((dept: any) => ({
+        id: dept.departmentId,
+        name: dept.departmentName,
+        description: dept.description || '',
+        isActive: dept.isActive ?? true,
+        createdAt: dept.createdAt || ''
+      })))
       setShowCreateUser(false)
       setNewUser({
         firstName: '',
@@ -86,7 +94,6 @@ const UserManagement: React.FC = () => {
         role: 1,
         departmentId: undefined
       })
-      loadData()
     } catch (error) {
       console.error('Error creating user:', error)
     } finally {
@@ -97,11 +104,26 @@ const UserManagement: React.FC = () => {
   const handleToggleUserStatus = async (userId: number, isActive: boolean) => {
     try {
       if (isActive) {
-        await userService.deactivateUser(userId)
+        const result = await userService.deactivateUserAndGetList(userId)
+        setUsers(result.users)
+        setDepartments(result.departments.map((dept: any) => ({
+          id: dept.departmentId,
+          name: dept.departmentName,
+          description: dept.description || '',
+          isActive: dept.isActive ?? true,
+          createdAt: dept.createdAt || ''
+        })))
       } else {
-        await userService.activateUser(userId)
+        const result = await userService.activateUserAndGetList(userId)
+        setUsers(result.users)
+        setDepartments(result.departments.map((dept: any) => ({
+          id: dept.departmentId,
+          name: dept.departmentName,
+          description: dept.description || '',
+          isActive: dept.isActive ?? true,
+          createdAt: dept.createdAt || ''
+        })))
       }
-      loadData()
     } catch (error) {
       console.error('Error toggling user status:', error)
     }

@@ -52,7 +52,7 @@ const NavigationBar: React.FC = () => {
                 )}
                 {(user?.role === UserRole.Admin) && (
                   <>
-                    <Nav.Link as={Link} to="/departments">Departments</Nav.Link>
+                    <Nav.Link as={Link} to="/departments">Departments & License Types</Nav.Link>
                     <Nav.Link as={Link} to="/admin/documents">Required Documents</Nav.Link>
                     <Nav.Link as={Link} to="/admin/users">User Management</Nav.Link>
                     <Nav.Link as={Link} to="/admin/notifications">Send Notifications</Nav.Link>

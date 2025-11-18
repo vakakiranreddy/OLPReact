@@ -48,7 +48,7 @@ export const documentService = {
   // Get application documents
   getApplicationDocuments: async (applicationId: number): Promise<DocumentResponse[]> => {
     try {
-      const response = await api.get<ApiResponse<DocumentResponse[]>>(`/ApplicationDocument/application/${applicationId}`)
+      const response = await api.get<ApiResponse<DocumentResponse[]>>(`/ApplicationDocument/application/${applicationId}/documents`)
       return response.data.data
     } catch (error) {
       console.error('Error fetching application documents:', error)
@@ -70,7 +70,7 @@ export const documentService = {
   // Download document
   downloadDocument: async (documentId: number): Promise<Blob> => {
     try {
-      const response = await api.get(`/ApplicationDocument/download/${documentId}`, {
+      const response = await api.get(`/ApplicationDocument/download/${documentId}/file`, {
         responseType: 'blob'
       })
       return response.data
@@ -83,7 +83,7 @@ export const documentService = {
   // Delete document
   deleteDocument: async (documentId: number): Promise<void> => {
     try {
-      await api.delete(`/ApplicationDocument/${documentId}`)
+      await api.delete(`/ApplicationDocument/${documentId}/document`)
     } catch (error) {
       console.error('Error deleting document:', error)
       throw new Error('Failed to delete document')

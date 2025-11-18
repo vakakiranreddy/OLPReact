@@ -78,6 +78,7 @@ function Departments() {
     try {
       setUploading(true)
       let departmentId: number
+      let result: { createdDepartment?: Department; allDepartments: Department[] }
       
       if (editingDepartment) {
         const updateData: UpdateDepartment = {
@@ -85,21 +86,25 @@ function Departments() {
           ...formData,
           IsActive: editingDepartment.isActive ?? true
         }
-        await departmentService.update(updateData)
+        result = await departmentService.updateAndGetList(updateData)
         departmentId = editingDepartment.departmentId
       } else {
-        const newDepartment = await departmentService.create(formData)
-        departmentId = newDepartment.departmentId
+        result = await departmentService.createAndGetList(formData)
+        departmentId = result.createdDepartment?.departmentId || 0
       }
       
       // Upload image if selected
       if (imageFile) {
         await departmentService.uploadImage(departmentId, imageFile)
+        // Refresh departments after image upload
+        await fetchDepartments()
+      } else {
+        // Update departments from API response
+        setDepartments(result.allDepartments)
       }
       
       setShowModal(false)
       setImageFile(null)
-      await fetchDepartments()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save department')
     } finally {
@@ -108,13 +113,11 @@ function Departments() {
   }
 
   const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this department?')) {
-      try {
-        await departmentService.delete(id)
-        await fetchDepartments()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to delete department')
-      }
+    try {
+      const updatedDepartments = await departmentService.deleteAndGetList(id)
+      setDepartments(updatedDepartments)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete department')
     }
   }
 

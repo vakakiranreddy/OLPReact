@@ -41,7 +41,7 @@ export const userNotificationService = {
   // Get user notifications (Admin/DepartmentHead only)
   getUserNotifications: async (userId: number): Promise<UserNotification[]> => {
     try {
-      const response = await api.get<ApiResponse<UserNotification[]>>(`/user-notifications/user/${userId}`)
+      const response = await api.get<ApiResponse<UserNotification[]>>(`/user-notifications/user/${userId}/notifications`)
       return response.data.data
     } catch (error) {
       console.error('Error fetching user notifications:', error)
@@ -74,7 +74,7 @@ export const userNotificationService = {
   // Delete notification
   deleteNotification: async (id: number): Promise<void> => {
     try {
-      await api.delete(`/user-notifications/${id}`)
+      await api.delete(`/user-notifications/${id}/notification`)
     } catch (error) {
       console.error('Error deleting notification:', error)
       throw new Error('Failed to delete notification')

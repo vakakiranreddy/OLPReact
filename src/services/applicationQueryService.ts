@@ -3,6 +3,7 @@ import type {
   ApplicationListItem,
   ApplicationDetails,
   CompleteApplicationDetails,
+  ApplicationPaymentDetails,
   ApiResponse 
 } from '../types'
 
@@ -173,6 +174,65 @@ export const applicationQueryService = {
       console.error('Error fetching complete application details:', error)
       console.error('Error details:', error)
       throw new Error('Failed to fetch complete application details')
+    }
+  },
+
+  // Get application details with payment info for payment step
+  getApplicationPaymentDetails: async (applicationId: number): Promise<ApplicationPaymentDetails> => {
+    try {
+      const url = `/application-queries/${applicationId}/payment-details`
+      console.log('Making API call to:', url)
+      const response = await api.get<ApiResponse<ApplicationPaymentDetails>>(url)
+      console.log('API response:', response.data)
+      return response.data.data
+    } catch (error) {
+      console.error('Error fetching application payment details:', error)
+      console.error('Error details:', error)
+      throw new Error('Failed to fetch application payment details')
+    }
+  },
+
+  // Get my applications with certificates in a single call
+  getMyApplicationsWithCertificates: async () => {
+    try {
+      const response = await api.get('/application-queries/my-applications-with-certificates')
+      return response.data.data
+    } catch (error) {
+      console.error('Error fetching applications with certificates:', error)
+      throw new Error('Failed to fetch applications with certificates')
+    }
+  },
+
+  // Get department head dashboard data in a single call
+  getDepartmentHeadDashboard: async () => {
+    try {
+      const response = await api.get('/application-queries/department-head-dashboard')
+      return response.data.data
+    } catch (error) {
+      console.error('Error fetching department head dashboard:', error)
+      throw new Error('Failed to fetch dashboard data')
+    }
+  },
+
+  // Get application review details (application + documents + payment) in a single call
+  getApplicationReviewDetails: async (applicationId: number) => {
+    try {
+      const response = await api.get(`/application-queries/${applicationId}/review-details`)
+      return response.data.data
+    } catch (error) {
+      console.error('Error fetching application review details:', error)
+      throw new Error('Failed to fetch application review details')
+    }
+  },
+
+  // Get reviewer dashboard data in a single call
+  getReviewerDashboard: async () => {
+    try {
+      const response = await api.get('/application-queries/reviewer-dashboard')
+      return response.data.data
+    } catch (error) {
+      console.error('Error fetching reviewer dashboard:', error)
+      throw new Error('Failed to fetch reviewer dashboard data')
     }
   }
 }

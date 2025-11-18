@@ -4,14 +4,11 @@ import { useSelector, useDispatch } from 'react-redux'
 import { useLocation } from 'react-router-dom'
 import { RootState, AppDispatch } from '../../app/store'
 import { applicationQueryService } from '../../services/applicationQueryService'
-import { paymentService } from '../../services/paymentService'
-import { userService } from '../../services/userService'
-import { documentService } from '../../services/documentService'
-import { setSelectedApplication } from '../../app/store/slices/applicationSlice'
+import { setSelectedApplication, setApplications } from '../../app/store/slices/applicationSlice'
 import { setDocuments } from '../../app/store/slices/documentSlice'
 import { setLoading, setSearchTerm, openModal, closeModal, setActiveFilter } from '../../app/store/slices/uiSlice'
 import { showError, showSuccess } from '../../app/store/slices/notificationSlice'
-import { fetchAllApplications, approveApplication, rejectApplication } from '../../app/store/thunks/applicationThunks'
+import { approveApplication, rejectApplication } from '../../app/store/thunks/applicationThunks'
 import { useApplications, useDocuments } from '../../hooks'
 import { getStatusText, getStatusColor, isImageFile, isPdfFile } from '../../utils'
 import { broadcastNotificationService } from '../../services/broadcastNotificationService'
@@ -67,12 +64,7 @@ const DepartmentHeadDashboard: React.FC<DepartmentHeadDashboardProps> = () => {
   const showModal = modals['applicationModal'] || false
 
   useEffect(() => {
-    if (user?.departmentId) {
-      fetchDepartmentApplications()
-    } else {
-      dispatch(fetchAllApplications())
-    }
-    fetchAdditionalData()
+    fetchDashboardData()
   }, [dispatch, user?.departmentId])
 
   useEffect(() => {
@@ -96,56 +88,34 @@ const DepartmentHeadDashboard: React.FC<DepartmentHeadDashboardProps> = () => {
     }
   }, [location.pathname, dispatch])
 
-  const fetchDepartmentApplications = async () => {
-    if (!user?.departmentId) return
-    
+  const fetchDashboardData = async () => {
     try {
       dispatch(setLoading(true))
-      await applicationQueryService.getApplicationsByDepartment(user.departmentId)
-      // Update the applications in the store
-      // Note: You might need to create a new action for this or modify existing one
-    } catch (error) {
-      console.error('Error fetching department applications:', error)
-      dispatch(showError('Failed to load department applications'))
-    } finally {
-      dispatch(setLoading(false))
-    }
-  }
-
-  const fetchAdditionalData = async () => {
-    try {
-      let data: ApplicationListItem[]
-      if (user?.departmentId) {
-        data = await applicationQueryService.getApplicationsByDepartment(user.departmentId)
-      } else {
-        data = applications.length > 0 ? applications : await applicationQueryService.getAllApplications()
-      }
+      const dashboardData = await applicationQueryService.getDepartmentHeadDashboard()
       
-      // Fetch reviewers in department (UserRole.Reviewer = 1)
-      const allReviewers = await userService.getUsersByRole(1)
-      // Filter reviewers to only include those in the same department
-      const departmentReviewers = user?.departmentId 
-        ? allReviewers.filter(reviewer => reviewer.departmentId === user.departmentId)
-        : allReviewers
-      setReviewers(departmentReviewers)
+      // Update applications in store
+      dispatch(setApplications(dashboardData.applications))
       
-      // Calculate detailed reviewer statistics using department-specific data
-      const reviewerStatsData: ReviewerStats[] = departmentReviewers.map(reviewer => {
-        const reviewerApps = data.filter(app => app.reviewerId === reviewer.userId)
+      setReviewers(dashboardData.reviewers)
+      
+      // Calculate reviewer statistics
+      const reviewerStatsData: ReviewerStats[] = dashboardData.reviewers.map((reviewer: UserResponse) => {
+        const reviewerApps = dashboardData.applications.filter((app: ApplicationListItem) => app.reviewerId === reviewer.userId)
         return {
           userId: reviewer.userId,
           name: `${reviewer.firstName} ${reviewer.lastName}`,
           email: reviewer.email,
           assignedCount: reviewerApps.length,
-          approvedCount: reviewerApps.filter(app => app.status === 8).length,
-          rejectedCount: reviewerApps.filter(app => app.status === 5).length,
-          pendingCount: reviewerApps.filter(app => app.status === 3).length
+          approvedCount: reviewerApps.filter((app: ApplicationListItem) => app.status === 8).length,
+          rejectedCount: reviewerApps.filter((app: ApplicationListItem) => app.status === 5).length,
+          pendingCount: reviewerApps.filter((app: ApplicationListItem) => app.status === 3).length
         }
       })
       setReviewerStats(reviewerStatsData)
 
     } catch (error) {
-      console.error('Error fetching applications:', error)
+      console.error('Error fetching dashboard data:', error)
+      dispatch(showError('Failed to load dashboard data'))
     } finally {
       dispatch(setLoading(false))
     }
@@ -156,13 +126,11 @@ const DepartmentHeadDashboard: React.FC<DepartmentHeadDashboardProps> = () => {
   const handleViewApplication = async (applicationId: number) => {
     setLoadingApplicationId(applicationId)
     try {
-      const appDetails = await applicationQueryService.getApplicationDetails(applicationId)
-      const appDocuments = await documentService.getApplicationDocuments(applicationId)
-      const payment = await paymentService.getByApplicationId(applicationId)
+      const reviewDetails = await applicationQueryService.getApplicationReviewDetails(applicationId)
       
-      dispatch(setSelectedApplication(appDetails))
-      dispatch(setDocuments(appDocuments))
-      setPaymentInfo(payment)
+      dispatch(setSelectedApplication(reviewDetails.applicationDetails))
+      dispatch(setDocuments(reviewDetails.documents))
+      setPaymentInfo(reviewDetails.payment)
       dispatch(openModal('applicationModal'))
     } catch (error) {
       console.error('Error fetching application details:', error)
@@ -185,13 +153,8 @@ const DepartmentHeadDashboard: React.FC<DepartmentHeadDashboardProps> = () => {
       await dispatch(approveApplication(approveData))
       dispatch(closeModal('applicationModal'))
       
-      // Refresh applications data
-      if (user?.departmentId) {
-        fetchDepartmentApplications()
-      } else {
-        dispatch(fetchAllApplications())
-      }
-      fetchAdditionalData()
+      // Refresh dashboard data
+      fetchDashboardData()
     } finally {
       setIsApproving(false)
     }
@@ -214,13 +177,8 @@ const DepartmentHeadDashboard: React.FC<DepartmentHeadDashboardProps> = () => {
       setShowRejectModal(false)
       dispatch(closeModal('applicationModal'))
       
-      // Refresh applications data
-      if (user?.departmentId) {
-        fetchDepartmentApplications()
-      } else {
-        dispatch(fetchAllApplications())
-      }
-      fetchAdditionalData()
+      // Refresh dashboard data
+      fetchDashboardData()
     } finally {
       setIsRejecting(false)
     }
@@ -228,7 +186,7 @@ const DepartmentHeadDashboard: React.FC<DepartmentHeadDashboardProps> = () => {
 
   const handleViewReviewerApplications = (reviewer: UserResponse) => {
     setSelectedReviewer(reviewer)
-    const apps = applications.filter(app => app.reviewerId === reviewer.userId)
+    const apps = applications.filter((app: ApplicationListItem) => app.reviewerId === reviewer.userId)
     setReviewerApplications(apps)
   }
 

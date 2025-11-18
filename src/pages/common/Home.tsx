@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Container, Row, Col, Card, Button } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
-import { useSelector } from 'react-redux'
-import { RootState } from '../../app/store'
+import { useSelector, useDispatch } from 'react-redux'
+import { RootState, AppDispatch } from '../../app/store'
 import { adminDashboardService } from '../../services/adminDashboardService'
+import { fetchReviewerApplications } from '../../app/store/thunks/applicationThunks'
 import { UserRole } from '../../types/enums'
 
 const Home: React.FC = () => {
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth)
+  const { applications } = useSelector((state: RootState) => state.applications)
+  const dispatch = useDispatch<AppDispatch>()
   const [showSupportDetails, setShowSupportDetails] = useState(false)
   const [showStatsDetails, setShowStatsDetails] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -41,8 +44,10 @@ const Home: React.FC = () => {
   useEffect(() => {
     if (isAuthenticated && user?.role === UserRole.Admin) {
       loadAdminStats()
+    } else if (isAuthenticated && user?.role === UserRole.Reviewer) {
+      dispatch(fetchReviewerApplications())
     }
-  }, [isAuthenticated, user?.role, loadAdminStats])
+  }, [isAuthenticated, user?.role, loadAdminStats, dispatch])
 
   return (
     <Container className="py-2 mb-0">
@@ -294,15 +299,15 @@ const Home: React.FC = () => {
                       <Card.Body className="p-3 d-flex flex-column justify-content-center">
                         <div className="mb-2 d-flex align-items-center justify-content-center">
                           <i className="bi bi-clock text-warning me-2" style={{fontSize: '1.2rem'}}></i>
-                          <span className="text-muted small">Under Review: 12</span>
+                          <span className="text-muted small">Under Review: {applications.filter(app => app.status === 3).length}</span>
                         </div>
                         <div className="mb-2 d-flex align-items-center justify-content-center">
                           <i className="bi bi-check-circle text-success me-2" style={{fontSize: '1.2rem'}}></i>
-                          <span className="text-muted small">Verified: 45</span>
+                          <span className="text-muted small">Verified: {applications.filter(app => [4, 8].includes(app.status)).length}</span>
                         </div>
                         <div className="d-flex align-items-center justify-content-center">
                           <i className="bi bi-x-circle text-danger me-2" style={{fontSize: '1.2rem'}}></i>
-                          <span className="text-muted small">Rejected: 8</span>
+                          <span className="text-muted small">Rejected: {applications.filter(app => app.status === 5).length}</span>
                         </div>
                       </Card.Body>
                     </Card>
@@ -402,7 +407,7 @@ const Home: React.FC = () => {
               </Col>
               
               <Col md={3} sm={6}>
-                <div className={`flip-card h-100`} style={{cursor: 'pointer'}}>
+                <div className={`flip-card h-100 ${showSupportDetails ? 'flipped' : ''}`} style={{cursor: 'pointer'}} onClick={() => setShowSupportDetails(!showSupportDetails)}>
                   <div className="flip-card-inner">
                     <Card className="flip-card-front h-100 text-center border-0 shadow-sm">
                       <Card.Body className="p-3">

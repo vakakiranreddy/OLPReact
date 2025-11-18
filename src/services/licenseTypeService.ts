@@ -4,6 +4,7 @@ import type {
   LicenseTypeDetails, 
   CreateLicenseType, 
   UpdateLicenseType, 
+  Department,
   ApiResponse 
 } from '../types'
 
@@ -115,6 +116,51 @@ export const licenseTypeService = {
     } catch (error) {
       console.error('Error uploading license type image:', error)
       throw new Error('Failed to upload license type image')
+    }
+  },
+
+  // Combined API methods following established pattern
+  // Create license type and get updated list
+  createAndGetList: async (data: CreateLicenseType): Promise<{ createdLicenseType: LicenseType; allLicenseTypes: LicenseType[] }> => {
+    try {
+      const response = await api.post('/licensetype/create-with-updated-list', data)
+      return response.data.data
+    } catch (error) {
+      console.error('Error creating license type:', error)
+      throw new Error('Failed to create license type')
+    }
+  },
+
+  // Update license type and get updated list
+  updateAndGetList: async (data: UpdateLicenseType): Promise<{ updatedLicenseType: LicenseType; allLicenseTypes: LicenseType[] }> => {
+    try {
+      const response = await api.put('/licensetype/update-with-list', data)
+      return response.data.data
+    } catch (error) {
+      console.error('Error updating license type:', error)
+      throw new Error('Failed to update license type')
+    }
+  },
+
+  // Delete license type and get updated list
+  deleteAndGetList: async (id: number): Promise<LicenseType[]> => {
+    try {
+      const response = await api.delete(`/licensetype/${id}/delete-with-updated-list`)
+      return response.data.data
+    } catch (error) {
+      console.error('Error deleting license type:', error)
+      throw new Error('Failed to delete license type')
+    }
+  },
+
+  // Get license types with departments for admin management
+  getLicenseTypesWithDepartments: async (): Promise<{ licenseTypes: LicenseType[]; departments: Department[] }> => {
+    try {
+      const response = await api.get('/licensetype/with-departments')
+      return response.data.data
+    } catch (error) {
+      console.error('Error fetching license types with departments:', error)
+      throw new Error('Failed to fetch license type management data')
     }
   }
 }

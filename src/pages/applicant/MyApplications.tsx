@@ -5,6 +5,18 @@ import { documentService } from '../../services/documentService'
 import { applicationActionService } from '../../services/applicationActionService'
 import type { ApplicationListItem, DocumentResponse } from '../../types'
 
+const dropdownStyles = `
+  .compact-select option {
+    padding: 4px 8px !important;
+    font-size: 0.8rem !important;
+    line-height: 1.2 !important;
+  }
+  .compact-select {
+    font-size: 0.8rem !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+`
+
 const MyApplications: React.FC = () => {
   const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
@@ -128,13 +140,14 @@ const MyApplications: React.FC = () => {
 
   return (
     <div className="container mt-4">
+      <style>{dropdownStyles}</style>
       <h3 className="fw-bold mb-4">My Applications</h3>
       
       {/* Search and Filter */}
       <div className="card mb-4">
         <div className="card-body">
           <div className="row g-3">
-            <div className="col-md-4">
+            <div className="col-md-6 col-lg-8">
               <input
                 type="text"
                 placeholder="Search by license name or application number..."
@@ -143,22 +156,22 @@ const MyApplications: React.FC = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <div className="col-md-4">
+            <div className="col-md-3 col-lg-2">
               <select
-                className="form-select"
+                className="form-select compact-select"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
-                <option value="">All Status</option>
+                <option value="">All</option>
                 <option value="0">Draft</option>
                 <option value="2">Submitted</option>
-                <option value="3">Under Review</option>
+                <option value="3">Review</option>
                 <option value="4">Verified</option>
                 <option value="5">Rejected</option>
                 <option value="8">Approved</option>
               </select>
             </div>
-            <div className="col-md-4 d-flex align-items-center">
+            <div className="col-md-3 col-lg-2 d-flex align-items-center">
               <small className="text-muted">
                 Found {filteredApplications.length} applications
               </small>
@@ -216,8 +229,8 @@ const MyApplications: React.FC = () => {
 
       {/* Application Details Modal */}
       {selectedApp && (
-        <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-xl">
+        <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1060 }}>
+          <div className="modal-dialog modal-xl modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">{selectedApp.licenseTypeName}</h5>

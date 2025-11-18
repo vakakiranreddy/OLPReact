@@ -1,5 +1,5 @@
 import api from './api'
-import type { ApiResponse, UserResponse } from '../types'
+import type { ApiResponse, UserResponse, Department } from '../types'
 
 export interface UpdateUserDto {
   firstName: string
@@ -218,13 +218,57 @@ export const userService = {
   },
 
   // Get users with departments in one API call
-  getUsersWithDepartments: async (): Promise<{ users: UserResponse[], departments: any[] }> => {
+  getUsersWithDepartments: async (): Promise<{ users: UserResponse[], departments: Department[] }> => {
     try {
       const response = await api.get('/user/with-departments')
       return response.data.data
     } catch (error) {
       console.error('Error fetching users with departments:', error)
       throw new Error('Failed to fetch user management data')
+    }
+  },
+
+  // Get reviewers in my department (DepartmentHead only)
+  getMyDepartmentReviewers: async (): Promise<UserResponse[]> => {
+    try {
+      const response = await api.get<ApiResponse<UserResponse[]>>('/user/my-department-reviewers')
+      return response.data.data
+    } catch (error) {
+      console.error('Error fetching department reviewers:', error)
+      throw new Error('Failed to fetch department reviewers')
+    }
+  },
+
+  // Activate user and get updated list
+  activateUserAndGetList: async (id: number): Promise<{ updatedUser: UserResponse; users: UserResponse[]; departments: Department[] }> => {
+    try {
+      const response = await api.put(`/user/${id}/activate-with-updated-list`)
+      return response.data.data
+    } catch (error) {
+      console.error('Error activating user:', error)
+      throw new Error('Failed to activate user')
+    }
+  },
+
+  // Deactivate user and get updated list
+  deactivateUserAndGetList: async (id: number): Promise<{ updatedUser: UserResponse; users: UserResponse[]; departments: Department[] }> => {
+    try {
+      const response = await api.put(`/user/${id}/deactivate-with-updated-list`)
+      return response.data.data
+    } catch (error) {
+      console.error('Error deactivating user:', error)
+      throw new Error('Failed to deactivate user')
+    }
+  },
+
+  // Admin create user and get updated list
+  adminCreateUserAndGetList: async (createDto: AdminRegisterReviewerDto): Promise<{ createdUser: UserResponse; users: UserResponse[]; departments: Department[] }> => {
+    try {
+      const response = await api.post('/user/admin/create-with-updated-list', createDto)
+      return response.data.data
+    } catch (error) {
+      console.error('Error creating user:', error)
+      throw new Error('Failed to create user')
     }
   }
 }

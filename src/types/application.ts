@@ -121,3 +121,34 @@ export interface CompleteApplicationDetails {
     uploadedDate: string
   }[]
 }
+
+export interface ApplicationPaymentDetails {
+  applicationDetails: {
+    applicationId: number
+    applicationNumber: string
+    status: number
+    appliedDate: string
+    applicantRemarks?: string
+    rejectionReason?: string
+    applicantName: string
+    applicantEmail: string
+    applicantPhone: string
+    licenseTypeId: number
+    licenseTypeName: string
+    departmentName: string
+    reviewerId?: number
+    reviewerName?: string
+    departmentHeadName?: string
+    verifiedDate?: string
+    paymentDate?: string
+    approvedDate?: string
+    rejectedDate?: string
+    paymentAmount?: number
+    paymentStatus?: number
+  }
+  paymentInfo: {
+    applicationId: number
+    amount: number
+    paymentInstructions?: string
+  }
+}

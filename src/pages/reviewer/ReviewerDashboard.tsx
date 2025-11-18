@@ -3,8 +3,6 @@ import { Container, Row, Col, Card, Button, Alert, Modal, Form, InputGroup } fro
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from '../../app/store'
 import { applicationQueryService } from '../../services/applicationQueryService'
-import { documentService } from '../../services/documentService'
-
 import { setSelectedApplication } from '../../app/store/slices/applicationSlice'
 import { setDocuments } from '../../app/store/slices/documentSlice'
 import { setSearchTerm, openModal, closeModal, setActiveTab, setActiveFilter } from '../../app/store/slices/uiSlice'
@@ -51,11 +49,10 @@ const ReviewerDashboard: React.FC = () => {
   const handleViewApplication = async (applicationId: number) => {
     setLoadingApplicationId(applicationId)
     try {
-      const appDetails = await applicationQueryService.getApplicationDetails(applicationId)
-      const appDocuments = await documentService.getApplicationDocuments(applicationId)
+      const reviewDetails = await applicationQueryService.getApplicationReviewDetails(applicationId)
       
-      dispatch(setSelectedApplication(appDetails))
-      dispatch(setDocuments(appDocuments))
+      dispatch(setSelectedApplication(reviewDetails.applicationDetails))
+      dispatch(setDocuments(reviewDetails.documents))
       dispatch(openModal('applicationModal'))
     } catch (error) {
       console.error('Error fetching application details:', error)
@@ -77,6 +74,7 @@ const ReviewerDashboard: React.FC = () => {
     try {
       await dispatch(verifyApplication(verifyData))
       dispatch(closeModal('applicationModal'))
+      dispatch(fetchReviewerApplications())
     } finally {
       setIsVerifying(false)
     }
@@ -93,9 +91,10 @@ const ReviewerDashboard: React.FC = () => {
       RejectionReason: rejectReason
     }
     
-    dispatch(rejectApplication(rejectData))
+    await dispatch(rejectApplication(rejectData))
     setShowRejectModal(false)
     dispatch(closeModal('applicationModal'))
+    dispatch(fetchReviewerApplications())
   }
 
 

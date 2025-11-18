@@ -11,7 +11,7 @@ export const useApplications = () => {
   const dispatch = useDispatch()
   const location = useLocation()
 
-  // Set tab and filter based on URL
+ 
   useEffect(() => {
     const path = location.pathname
     if (path.includes('/statistics')) {
@@ -21,7 +21,7 @@ export const useApplications = () => {
     } else {
       dispatch(setActiveTab('applications'))
       
-      // Department Head specific routes
+      
       if (path.includes('/approved')) {
         dispatch(setActiveFilter('approved'))
       } else if (path.includes('/need-approval')) {
@@ -36,7 +36,7 @@ export const useApplications = () => {
     }
   }, [location.pathname, dispatch])
 
-  // Filter and search applications
+  
   const filteredApplications = useMemo(() => {
     const statusFiltered = filterApplicationsByStatus(applications, activeFilter)
     return searchApplications(statusFiltered, searchTerm)

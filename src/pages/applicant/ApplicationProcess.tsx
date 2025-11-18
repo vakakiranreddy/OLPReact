@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { Container, Row, Col, Card, Button, Alert, Form } from 'react-bootstrap'
 import { applicationQueryService } from '../../services/applicationQueryService'
-import { requiredDocumentService } from '../../services/requiredDocumentService'
 import { showSuccess, showError } from '../../app/store/slices/notificationSlice'
 import type { AppDispatch } from '../../app/store'
 
@@ -283,12 +282,12 @@ const ApplicationProcess: React.FC = () => {
   
   const handleNext = async () => {
     try {
-      const payInfo = await paymentService.getPaymentInfo(Number(applicationId))
-      setPaymentInfo(payInfo)
+      const paymentDetails = await applicationQueryService.getApplicationPaymentDetails(Number(applicationId))
+      setPaymentInfo(paymentDetails.paymentInfo)
       setStep('payment')
       setHasNavigatedToPayment(true) // Mark that user has navigated to payment
     } catch (error) {
-      console.error('Error getting payment info:', error)
+      console.error('Error getting payment details:', error)
       dispatch(showError('Error getting payment information. Please try again.'))
     }
   }
