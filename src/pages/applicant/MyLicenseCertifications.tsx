@@ -4,8 +4,13 @@ import { documentService } from '../../services/documentService'
 import { applicationActionService } from '../../services/applicationActionService'
 import type { ApplicationListItem, CertificateWithData } from '../../types'
 
+// Extend ApplicationListItem to include certificates
+interface ApplicationWithCertificates extends ApplicationListItem {
+  certificates?: CertificateWithData[]
+}
+
 const MyLicenseCertifications: React.FC = () => {
-  const [approvedApplications, setApprovedApplications] = useState<ApplicationListItem[]>([])
+  const [approvedApplications, setApprovedApplications] = useState<ApplicationWithCertificates[]>([])
   const [certificates, setCertificates] = useState<{ [key: number]: CertificateWithData[] }>({})
   const [loading, setLoading] = useState(true)
 
@@ -18,12 +23,12 @@ const MyLicenseCertifications: React.FC = () => {
       const data = await applicationQueryService.getMyApplicationsWithCertificates()
       
       // Filter approved applications for licenses
-      const approved = data.filter((app: any) => app.status === 8) // Status 8 = Approved
+      const approved = data.filter((app: ApplicationWithCertificates) => app.status === 8) // Status 8 = Approved
       setApprovedApplications(approved)
       
       // Process certificates data
       const certificatesData: { [key: number]: CertificateWithData[] } = {}
-      approved.forEach((app: any) => {
+      approved.forEach((app: ApplicationWithCertificates) => {
         if (app.certificates && app.certificates.length > 0) {
           // Filter to show only Official License Certificate documents
           const officialCerts = app.certificates.filter((cert: CertificateWithData) => 

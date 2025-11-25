@@ -15,8 +15,9 @@ import type { VerifyApplicationRequest, RejectApplicationRequest, DocumentRespon
 const ReviewerDashboard: React.FC = () => {
   const { selectedApplication: selectedApp } = useSelector((state: RootState) => state.applications)
   const { loading, modals } = useSelector((state: RootState) => state.ui)
+  const { documents } = useSelector((state: RootState) => state.documents)
   const { applications, filteredApplications, activeTab, activeFilter, searchTerm } = useApplications()
-  const { documents, previewDocument: previewDoc, handleDownload, handleViewDocument, hidePreview } = useDocuments()
+  const { previewDoc, handleDownload, handleViewDocument, hidePreview } = useDocuments()
   const dispatch = useDispatch<AppDispatch>()
 
   const [showRejectModal, setShowRejectModal] = useState(false)
@@ -309,7 +310,15 @@ const ReviewerDashboard: React.FC = () => {
               
               <Col md={6}>
                 <h5>Documents</h5>
-                {documents.map(renderDocument)}
+                {(() => {
+                  console.log('Documents in modal:', documents)
+                  return null
+                })()}
+                {documents && documents.length > 0 ? (
+                  documents.map(renderDocument)
+                ) : (
+                  <Alert variant="info">No documents found for this application.</Alert>
+                )}
               </Col>
             </Row>
           )}

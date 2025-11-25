@@ -39,6 +39,8 @@ function Register() {
   const [otpError, setOtpError] = useState('')
   const [sendingOtp, setSendingOtp] = useState(false)
   const [verifyingOtp, setVerifyingOtp] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   // Validation functions
   const validateFirstName = (name: string, touched: boolean): string => {
@@ -375,52 +377,72 @@ function Register() {
                     <div className="col-md-6">
                       <Form.Group className="mb-3">
                         <Form.Label>Password</Form.Label>
-                        <Form.Control
-                          type="password"
-                          placeholder="Enter your password"
-                          value={password}
-                          onChange={(e) => {
-                            setPassword(e.target.value)
-                            setPasswordError(validatePassword(e.target.value, passwordTouched))
-                            // Re-validate confirm password if it exists
-                            if (confirmPassword) {
-                              setConfirmPasswordError(validateConfirmPassword(confirmPassword, confirmPasswordTouched))
-                            }
-                          }}
-                          onBlur={() => {
-                            setPasswordTouched(true)
-                            setPasswordError(validatePassword(password, true))
-                          }}
-                          isInvalid={!!passwordError}
-                          required
-                        />
-                        <Form.Control.Feedback type="invalid">
-                          {passwordError}
-                        </Form.Control.Feedback>
+                        <div className="position-relative">
+                          <Form.Control
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Enter your password"
+                            value={password}
+                            onChange={(e) => {
+                              setPassword(e.target.value)
+                              setPasswordError(validatePassword(e.target.value, passwordTouched))
+                              // Re-validate confirm password if it exists
+                              if (confirmPassword) {
+                                setConfirmPasswordError(validateConfirmPassword(confirmPassword, confirmPasswordTouched))
+                              }
+                            }}
+                            onBlur={() => {
+                              setPasswordTouched(true)
+                              setPasswordError(validatePassword(password, true))
+                            }}
+                            isInvalid={!!passwordError}
+                            required
+                          />
+                          <button
+                            type="button"
+                            className="btn position-absolute top-50 end-0 translate-middle-y border-0 bg-transparent"
+                            style={{ zIndex: 10, paddingRight: '12px' }}
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'} text-muted`}></i>
+                          </button>
+                          <Form.Control.Feedback type="invalid">
+                            {passwordError}
+                          </Form.Control.Feedback>
+                        </div>
                       </Form.Group>
                     </div>
                     
                     <div className="col-md-6">
                       <Form.Group className="mb-3">
                         <Form.Label>Confirm Password</Form.Label>
-                        <Form.Control
-                          type="password"
-                          placeholder="Confirm your password"
-                          value={confirmPassword}
-                          onChange={(e) => {
-                            setConfirmPassword(e.target.value)
-                            setConfirmPasswordError(validateConfirmPassword(e.target.value, confirmPasswordTouched))
-                          }}
-                          onBlur={() => {
-                            setConfirmPasswordTouched(true)
-                            setConfirmPasswordError(validateConfirmPassword(confirmPassword, true))
-                          }}
-                          isInvalid={!!confirmPasswordError}
-                          required
-                        />
-                        <Form.Control.Feedback type="invalid">
-                          {confirmPasswordError}
-                        </Form.Control.Feedback>
+                        <div className="position-relative">
+                          <Form.Control
+                            type={showConfirmPassword ? "text" : "password"}
+                            placeholder="Confirm your password"
+                            value={confirmPassword}
+                            onChange={(e) => {
+                              setConfirmPassword(e.target.value)
+                              setConfirmPasswordError(validateConfirmPassword(e.target.value, confirmPasswordTouched))
+                            }}
+                            onBlur={() => {
+                              setConfirmPasswordTouched(true)
+                              setConfirmPasswordError(validateConfirmPassword(confirmPassword, true))
+                            }}
+                            isInvalid={!!confirmPasswordError}
+                            required
+                          />
+                          <button
+                            type="button"
+                            className="btn position-absolute top-50 end-0 translate-middle-y border-0 bg-transparent"
+                            style={{ zIndex: 10, paddingRight: '12px' }}
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          >
+                            <i className={`bi ${showConfirmPassword ? 'bi-eye-slash' : 'bi-eye'} text-muted`}></i>
+                          </button>
+                          <Form.Control.Feedback type="invalid">
+                            {confirmPasswordError}
+                          </Form.Control.Feedback>
+                        </div>
                       </Form.Group>
                     </div>
                   </div>

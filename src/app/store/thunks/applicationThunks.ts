@@ -63,22 +63,3 @@ export const approveApplication = createAsyncThunk(
   }
 )
 
-// Fetch all applications (for department head)
-export const fetchAllApplications = createAsyncThunk(
-  'applications/fetchAllApplications',
-  async (_, { dispatch }) => {
-    try {
-      dispatch(setLoading(true))
-      const data = await applicationQueryService.getAllApplications()
-      dispatch(setApplications(data))
-      
-      const stats = await applicationQueryService.getMyStatistics()
-      dispatch(setStatistics(stats))
-    } catch {
-      dispatch(setError('Error fetching applications'))
-      dispatch(showError('Failed to load applications'))
-    } finally {
-      dispatch(setLoading(false))
-    }
-  }
-)

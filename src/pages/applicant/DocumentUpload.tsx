@@ -9,7 +9,7 @@ import { showSuccess, showError } from '../../app/store/slices/notificationSlice
 import type { ApplicationDetails, RequiredDocument, DocumentResponse } from '../../types'
 import type { AppDispatch } from '../../app/store'
 
-// Helper function to format file size
+
 const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 Bytes'
   const k = 1024
@@ -32,7 +32,7 @@ const DocumentUpload: React.FC = () => {
 
   useEffect(() => {
     if (applicationId) {
-      setPreviewDoc(null) // Clear any existing preview
+      setPreviewDoc(null) 
       fetchData()
     }
   }, [applicationId])
@@ -40,10 +40,9 @@ const DocumentUpload: React.FC = () => {
   const fetchData = async () => {
     setLoading(true)
     try {
-      // Use the common method that combines all 3 API calls
+     
       const completeDetails = await applicationQueryService.getCompleteDetails(Number(applicationId))
       
-      // Map application details to expected format (based on actual API response)
       const appData: ApplicationDetails = {
         applicationId: completeDetails.applicationDetails.applicationId,
         applicationNumber: completeDetails.applicationDetails.applicationNumber,

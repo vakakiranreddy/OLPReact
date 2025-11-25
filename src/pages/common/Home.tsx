@@ -12,6 +12,7 @@ const Home: React.FC = () => {
   const { applications } = useSelector((state: RootState) => state.applications)
   const dispatch = useDispatch<AppDispatch>()
   const [showSupportDetails, setShowSupportDetails] = useState(false)
+  const [showReviewerSupportDetails, setShowReviewerSupportDetails] = useState(false)
   const [showStatsDetails, setShowStatsDetails] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [adminStats, setAdminStats] = useState({
@@ -316,7 +317,7 @@ const Home: React.FC = () => {
               </Col>
               
               <Col md={4} sm={6}>
-                <div className={`flip-card h-100 ${showSupportDetails ? 'flipped' : ''}`} style={{cursor: 'pointer'}} onClick={() => setShowSupportDetails(!showSupportDetails)}>
+                <div className={`flip-card h-100 ${showReviewerSupportDetails ? 'flipped' : ''}`} style={{cursor: 'pointer'}} onClick={() => setShowReviewerSupportDetails(!showReviewerSupportDetails)}>
                   <div className="flip-card-inner">
                     <Card className="flip-card-front h-100 text-center border-0 shadow-sm">
                       <Card.Body className="p-3">

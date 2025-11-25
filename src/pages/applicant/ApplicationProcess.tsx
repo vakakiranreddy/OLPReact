@@ -6,7 +6,7 @@ import { applicationQueryService } from '../../services/applicationQueryService'
 import { showSuccess, showError } from '../../app/store/slices/notificationSlice'
 import type { AppDispatch } from '../../app/store'
 
-// QR Code library
+
 interface QRCodeOptions {
   text: string;
   width: number;
@@ -30,6 +30,7 @@ declare global {
 
 import { paymentService } from '../../services/paymentService'
 import { documentService } from '../../services/documentService'
+import { useDocuments } from '../../hooks/useDocuments'
 import type { ApplicationDetails, CreatePaymentRequest, PaymentInfo, RequiredDocument, DocumentResponse } from '../../types'
 
 type UploadedDocument = DocumentResponse
@@ -57,8 +58,10 @@ const ApplicationProcess: React.FC = () => {
   const [step, setStep] = useState<'documents' | 'payment'>('documents')
   const [isInitialized, setIsInitialized] = useState(false)
   const [hasNavigatedToPayment, setHasNavigatedToPayment] = useState(false)
-  const [previewDoc, setPreviewDoc] = useState<DocumentResponse | null>(null)
   const qrCodeRef = useRef<HTMLDivElement>(null)
+  
+  // Use the documents hook
+  const { previewDoc, handleViewDocument, hidePreview, handleRemoveDocument } = useDocuments()
 
 
   useEffect(() => {
@@ -71,7 +74,7 @@ const ApplicationProcess: React.FC = () => {
       setUploadedDocs({})
       setPaymentInfo(null)
       setTransactionId('')
-      setPreviewDoc(null)
+      hidePreview()
       setStep('documents')
       setIsInitialized(true)
       fetchApplicationData()
@@ -297,42 +300,9 @@ const ApplicationProcess: React.FC = () => {
     return mandatoryDocs.every(doc => uploadedDocs[doc.requiredDocumentId])
   }
 
-  const handleViewDocument = async (doc: DocumentResponse) => {
-    try {
-      const blob = await documentService.downloadDocument(doc.documentId)
-      const reader = new FileReader()
-      reader.onload = () => {
-        const base64Data = reader.result as string
-        const base64String = base64Data.split(',')[1]
-        const docWithData = { ...doc, fileData: base64String }
-        setPreviewDoc(docWithData)
-      }
-      reader.readAsDataURL(blob)
-    } catch (error) {
-      console.error('Error loading document for preview:', error)
-      dispatch(showError('Error loading document preview'))
-    }
-  }
 
-  const handleRemoveDocument = async (requiredDocumentId: number, documentId: number) => {
-    try {
-      if (!documentId) {
-        dispatch(showError('Invalid document ID'))
-        return
-      }
-      await documentService.deleteDocument(documentId)
-      setUploadedDocs(prev => {
-        const newDocs = {...prev}
-        delete newDocs[requiredDocumentId]
-        return newDocs
-      })
-      setPreviewDoc(null)
-      dispatch(showSuccess('Document removed successfully!'))
-    } catch (error) {
-      console.error('Error removing document:', error)
-      dispatch(showError('Error removing document. Please try again.'))
-    }
-  }
+
+
 
   const handlePaymentSubmit = async () => {
     if (!transactionId.trim()) {
@@ -468,7 +438,7 @@ const ApplicationProcess: React.FC = () => {
                                     variant="link" 
                                     size="sm" 
                                     className="p-0 text-danger"
-                                    onClick={() => handleRemoveDocument(doc.requiredDocumentId, uploadedDocs[doc.requiredDocumentId]?.documentId)}
+                                    onClick={() => handleRemoveDocument(doc.requiredDocumentId, uploadedDocs[doc.requiredDocumentId]?.documentId, setUploadedDocs)}
                                   >
                                     Remove
                                   </Button>
@@ -505,7 +475,7 @@ const ApplicationProcess: React.FC = () => {
                                     variant="outline-secondary" 
                                     size="sm"
                                     className="mt-2"
-                                    onClick={() => setPreviewDoc(null)}
+                                    onClick={hidePreview}
                                   >
                                     Hide Preview
                                   </Button>
@@ -613,7 +583,7 @@ const ApplicationProcess: React.FC = () => {
                       onClick={(e) => {
                         e.preventDefault()
                         setStep('documents')
-                        setPreviewDoc(null) // Clear any preview
+                        hidePreview() // Clear any preview
                       }}
                       disabled={uploading}
                     >

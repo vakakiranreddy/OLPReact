@@ -25,8 +25,8 @@ const NavigationBar: React.FC = () => {
             className="d-inline-block align-top"
           />
         </Navbar.Brand>
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
-        <Navbar.Collapse id="basic-navbar-nav">
+        <Navbar.Toggle aria-controls="basic-navbar-nav" className="ms-auto" />
+        <Navbar.Collapse id="basic-navbar-nav" className="text-end">
           <Nav className="me-auto">
             <Nav.Link as={Link} to="/">Home</Nav.Link>
             {isAuthenticated && (
@@ -61,7 +61,7 @@ const NavigationBar: React.FC = () => {
               </>
             )}
           </Nav>
-          <Nav>
+          <Nav className="ms-auto text-end">
             {isAuthenticated ? (
               <>
                 <Nav.Link as={Link} to="/notifications" className="me-2 position-relative">
@@ -84,10 +84,11 @@ const NavigationBar: React.FC = () => {
                     </div>
                   )}
                 </Nav.Link>
-                <Button variant="outline-light" size="sm" onClick={handleLogout}>
-                  Logout
-                </Button>
-
+                <div className="d-flex justify-content-end">
+                  <Button variant="outline-light" size="sm" onClick={handleLogout}>
+                    Logout
+                  </Button>
+                </div>
               </>
             ) : (
               <>

@@ -13,6 +13,7 @@ function Login() {
   const [passwordError, setPasswordError] = useState('')
   const [emailTouched, setEmailTouched] = useState(false)
   const [passwordTouched, setPasswordTouched] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   
   // Redux state and dispatch
   const dispatch = useAppDispatch()
@@ -164,24 +165,34 @@ function Login() {
 
               <Form.Group className="mb-3">
                 <Form.Label>Password</Form.Label>
-                <Form.Control
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value)
-                    setPasswordError(validatePassword(e.target.value, passwordTouched))
-                  }}
-                  onBlur={() => {
-                    setPasswordTouched(true)
-                    setPasswordError(validatePassword(password, true))
-                  }}
-                  isInvalid={!!passwordError}
-                  required
-                />
-                <Form.Control.Feedback type="invalid">
-                  {passwordError}
-                </Form.Control.Feedback>
+                <div className="position-relative">
+                  <Form.Control
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value)
+                      setPasswordError(validatePassword(e.target.value, passwordTouched))
+                    }}
+                    onBlur={() => {
+                      setPasswordTouched(true)
+                      setPasswordError(validatePassword(password, true))
+                    }}
+                    isInvalid={!!passwordError}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="btn position-absolute top-50 end-0 translate-middle-y border-0 bg-transparent"
+                    style={{ zIndex: 10, paddingRight: '12px' }}
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'} text-muted`}></i>
+                  </button>
+                  <Form.Control.Feedback type="invalid">
+                    {passwordError}
+                  </Form.Control.Feedback>
+                </div>
               </Form.Group>
 
               <div className="d-grid mb-3">
